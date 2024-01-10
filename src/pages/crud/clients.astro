@@ -1,0 +1,13 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { supabase } from "../../lib/supabase";
+import { ClientsTable, type ClientEntry } from "../../components/ClientsTable";
+
+const { data } = (await supabase.from("clients").select("*")) as {
+  data: ClientEntry[];
+};
+---
+
+<Layout title="dashboard">
+  <ClientsTable reviews={data} client:idle />
+</Layout>
