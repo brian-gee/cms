@@ -82,16 +82,48 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
+  const [currentClientId, setCurrentClientId] = createSignal(null);
+  const [selectedClient, setSelectedClient] = createSignal(null);
 
   // Toggle functions for modals
   const toggleEditModal = () => setShowEditModal(!showEditModal());
   const toggleAddModal = () => setShowAddModal(!showAddModal());
-  const toggleDeleteModal = () => setShowDeleteModal(!showDeleteModal());
+  const toggleDeleteModal = (clientId: any) => {
+    setShowDeleteModal(!showDeleteModal());
+    setCurrentClientId(clientId);
+  };
+
+  const handleClientClick = (client: any) => {
+    setSelectedClient(client);
+  };
+
+  const deleteClient = async (clientId: any) => {
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientId);
+      if (error) {
+        throw new Error(`Error deleting client: ${error.message}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  function formatPhoneNumber(phoneNumber: string) {
+    const cleaned = ("" + phoneNumber).replace(/\D/g, "");
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return null;
+  }
 
   return (
     <div class="max-w-3xl w-full mx-auto">
       <ErrorBoundary fallback={<div>Something went wrong</div>}>
-        <div class="container mx-auto mt-8">
+        <div class="container mt-8">
           <div class="flex justify-between items-center bg-white p-4 rounded-md">
             <h1 class="text-lg font-bold">All Clients</h1>
             <div>
@@ -108,9 +140,9 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
               <thead class="bg-gray-200">
                 <tr>
                   {/* Headers - Adjust according to your data keys */}
-                  <th class="px-6 py-3">
+                  {/* <th class="px-6 py-3">
                     <input type="checkbox" />
-                  </th>
+                  </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Name
                   </th>
@@ -120,12 +152,12 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Email
                   </th>
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  {/* <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Address
                   </th>
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Company
-                  </th>
+                  </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
@@ -133,35 +165,46 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
               </thead>
               <tbody class="bg-white">
                 <For each={data()}>
-                  {(client) => (
-                    <tr>
-                      <td class="px-6 py-4">
+                  {(client, index) => (
+                    <tr
+                      onClick={() => handleClientClick(client)}
+                      class={index() % 2 != 0 ? "bg-gray-100" : ""}
+                      style="cursor: pointer;"
+                    >
+                      {/* <td
+                        onClick={(e) => e.stopPropagation()}
+                        class="px-6 py-4"
+                      >
                         <input type="checkbox" />
-                      </td>
+                      </td> */}
                       <td class="px-6 py-4 whitespace-nowrap">
                         {client.first_name + " " + client.last_name}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        {client.phone_number}
+                        {formatPhoneNumber(client.phone)}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         {client.email}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        {client.address + " " + client.city + " " + client.zip}
+                      {/* <td class="px-6 py-4 whitespace-nowrap">
+                        {client.address +
+                          ", " +
+                          client.city +
+                          ", " +
+                          client.zip}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         {client.company}
-                      </td>
+                      </td> */}
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a
-                          href="#"
+                        <button
+                          onClick={() => handleClientClick(client)}
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           Edit
-                        </a>
+                        </button>
                         <button
-                          onclick={toggleDeleteModal}
+                          onclick={() => toggleDeleteModal(client.id)}
                           class="text-red-600 hover:text-red-900 ml-4"
                         >
                           Delete
@@ -575,14 +618,15 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                     ></path>
                   </svg>
                   <h3 class="mt-5 mb-6 text-lg text-gray-500 dark:text-gray-400">
-                    Are you sure you want to delete this user?
+                    Are you sure you want to delete client with ID:{" "}
+                    {currentClientId()}?
                   </h3>
-                  <a
-                    href="#"
+                  <button
+                    onclick={() => deleteClient(currentClientId())}
                     class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2 dark:focus:ring-red-800"
                   >
                     Yes, I'm sure
-                  </a>
+                  </button>
                   <a
                     href="#"
                     class="text-gray-900 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-primary-300 border border-gray-200 font-medium inline-flex items-center rounded-lg text-base px-3 py-2.5 text-center dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700"
@@ -590,6 +634,79 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                   >
                     No, cancel
                   </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Show>
+
+        {/* Modal for displaying selected client information */}
+        <Show when={selectedClient()}>
+          <div
+            class="fixed left-0 right-0 z-50 items-center justify-center overflow-x-hidden overflow-y-auto top-4 md:inset-0 h-modal sm:h-full"
+            id="client-info-modal"
+          >
+            <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
+              <div class="relative bg-white rounded-lg shadow dark:bg-gray-800">
+                <div class="flex items-start justify-between p-5 border-b rounded-t dark:border-gray-700">
+                  <h3 class="text-xl font-semibold dark:text-white">
+                    Client Information
+                  </h3>
+                  <div>
+                    <button class="ml-auto text-indigo-600 hover:text-indigo-900">
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-700 dark:hover:text-white"
+                      onClick={() => setSelectedClient(null)}
+                    >
+                      <svg
+                        class="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="p-6 space-y-6">
+                  {/* Display client information here */}
+                  <div>
+                    <h4 class="text-lg font-medium">Name</h4>
+                    <p>
+                      {selectedClient().first_name} {selectedClient().last_name}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium">Phone</h4>
+                    <p>{formatPhoneNumber(selectedClient().phone)}</p>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium">Email</h4>
+                    <p>{selectedClient().email}</p>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium">Address</h4>
+                    <p>
+                      {selectedClient().address +
+                        " " +
+                        selectedClient().city +
+                        " " +
+                        selectedClient().zip}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-medium">Company</h4>
+                    <p>{selectedClient().company}</p>
+                  </div>
+                  {/* Add more fields as needed */}
                 </div>
               </div>
             </div>

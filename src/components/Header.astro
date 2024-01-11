@@ -1,0 +1,34 @@
+---
+import { Image } from "astro:assets";
+---
+
+<!-- Main navigation component -->
+<header class="px-3 py-10 sm:px-6">
+  <div class="flex items-center justify-between max-w-3xl mx-auto lg:max-w-6xl">
+    <div>
+      <a
+        href="/"
+        aria-label="Flavia's Sweets"
+        title="Flavia's Sweets"
+        class="inline-flex items-center"
+      >
+        <span class="ml-2 text-3xl font-bold tracking-wide hover:text-pink-400">
+          Flavia's Sweets
+        </span>
+      </a>
+    </div>
+    <div class="flex items-center space-x-4">
+      <ul class="flex space-x-4 text-lg font-bold">
+        <a href="/" class="hover:text-pink-400">
+          <li>Home</li>
+        </a>
+        <a href="/dashboard" class="hover:text-pink-400">
+          <li>Dashboard</li>
+        </a>
+        <a href="/crud/clients" class="hover:text-pink-400">
+          <li>Clients</li>
+        </a>
+      </ul>
+    </div>
+  </div>
+</header>
