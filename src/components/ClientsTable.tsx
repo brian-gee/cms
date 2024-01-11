@@ -84,6 +84,20 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
   const [currentClientId, setCurrentClientId] = createSignal(null);
   const [selectedClient, setSelectedClient] = createSignal(null);
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const itemsPerPage = 10; // Adjust as needed
+
+  // Function to calculate the slice of data to display
+  const paginatedData = () => {
+    const start = (currentPage() - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return data()?.slice(start, end);
+  };
+
+  // Function to handle page change
+  const setPage = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   // Toggle functions for modals
   const toggleEditModal = () => setShowEditModal(!showEditModal());
@@ -126,10 +140,10 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
         <div class="container mt-8">
           <div class="flex justify-between items-center bg-white p-4 rounded-md">
             <h1 class="text-lg font-bold">All Clients</h1>
-            <div>
+            <div class="">
               <button
                 onClick={toggleAddModal}
-                class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+                class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary_hover transition"
               >
                 Add Client
               </button>
@@ -164,38 +178,27 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                 </tr>
               </thead>
               <tbody class="bg-white">
-                <For each={data()}>
+                <For each={paginatedData()}>
                   {(client, index) => (
-                    <tr
-                      onClick={() => handleClientClick(client)}
-                      class={index() % 2 != 0 ? "bg-gray-100" : ""}
-                      style="cursor: pointer;"
-                    >
-                      {/* <td
-                        onClick={(e) => e.stopPropagation()}
-                        class="px-6 py-4"
+                    <tr class={index() % 2 != 0 ? "bg-gray-100" : ""}>
+                      <td
+                        onClick={() => handleClientClick(client)}
+                        class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        <input type="checkbox" />
-                      </td> */}
-                      <td class="px-6 py-4 whitespace-nowrap">
                         {client.first_name + " " + client.last_name}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
+                      <td
+                        onClick={() => handleClientClick(client)}
+                        class="px-6 py-4 whitespace-nowrap cursor-pointer"
+                      >
                         {formatPhoneNumber(client.phone)}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
+                      <td
+                        onClick={() => handleClientClick(client)}
+                        class="px-6 py-4 whitespace-nowrap cursor-pointer"
+                      >
                         {client.email}
                       </td>
-                      {/* <td class="px-6 py-4 whitespace-nowrap">
-                        {client.address +
-                          ", " +
-                          client.city +
-                          ", " +
-                          client.zip}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        {client.company}
-                      </td> */}
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => handleClientClick(client)}
@@ -205,7 +208,7 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                         </button>
                         <button
                           onclick={() => toggleDeleteModal(client.id)}
-                          class="text-red-600 hover:text-red-900 ml-4"
+                          class="text-primary hover:text-primary_hover ml-4"
                         >
                           Delete
                         </button>
@@ -215,13 +218,27 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
                 </For>
               </tbody>
             </table>
+            {/* Pagination Controls */}
+            <div class="pagination flex justify-center space-x-4 py-4">
+              {Array(Math.ceil(data().length / itemsPerPage))
+                .fill(0)
+                .map((_, index) => (
+                  <button onClick={() => setPage(index + 1)}>
+                    {index + 1}
+                  </button>
+                ))}
+            </div>
           </div>
         </div>
 
         {/* <!-- Add Client Modal --> */}
         <Show when={showAddModal()}>
           <div
-            class="fixed left-0 right-0 z-50 items-center justify-center overflow-x-hidden overflow-y-auto top-4 md:inset-0 h-modal sm:h-full"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
             id="add-user-modal"
           >
             <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
@@ -402,7 +419,11 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
         {/* // <!-- Edit User Modal --> */}
         <Show when={showEditModal()}>
           <div
-            class="fixed left-0 right-0 z-50 items-center justify-center overflow-x-hidden overflow-y-auto top-4 md:inset-0 h-modal sm:h-full"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
             id="edit-user-modal"
           >
             <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
@@ -574,7 +595,11 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
         {/* <!-- Delete User Modal --> */}
         <Show when={showDeleteModal()}>
           <div
-            class="fixed left-0 right-0 z-50 items-center justify-center overflow-x-hidden overflow-y-auto top-4 md:inset-0 h-modal sm:h-full"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
             id="delete-user-modal"
           >
             <div class="relative w-full h-full max-w-md px-4 md:h-auto">
@@ -643,7 +668,11 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
         {/* Modal for displaying selected client information */}
         <Show when={selectedClient()}>
           <div
-            class="fixed left-0 right-0 z-50 items-center justify-center overflow-x-hidden overflow-y-auto top-4 md:inset-0 h-modal sm:h-full"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            aria-hidden="true"
+          ></div>
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
             id="client-info-modal"
           >
             <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">

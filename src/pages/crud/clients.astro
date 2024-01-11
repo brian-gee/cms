@@ -8,6 +8,6 @@ const { data } = (await supabase.from("clients").select("*")) as {
 };
 ---
 
-<Layout title="dashboard">
+<Layout title="Clients">
   <ClientsTable reviews={data} client:idle />
 </Layout>
