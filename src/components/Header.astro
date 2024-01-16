@@ -1,8 +1,29 @@
 ---
-import { Image } from "astro:assets";
+import { supabase } from "../lib/supabase";
+
+const { cookies, redirect } = Astro;
+
+const accessToken = cookies.get("sb-access-token")?.value;
+const refreshToken = cookies.get("sb-refresh-token")?.value;
+let isAuthenticated = false;
+
+if (accessToken && refreshToken) {
+  const response = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+
+  if (response.error) {
+    cookies.delete("sb-access-token", { path: "/" });
+    cookies.delete("sb-refresh-token", { path: "/" });
+  } else {
+    isAuthenticated = !!response.data;
+  }
+}
+
+export { isAuthenticated };
 ---
 
-<!-- Main navigation component -->
 <header class="px-3 py-10 sm:px-6">
   <div class="flex items-center justify-between max-w-3xl mx-auto lg:max-w-6xl">
     <div>
@@ -31,6 +52,19 @@ import { Image } from "astro:assets";
         <a href="/crud/orders" class="hover:text-pink-400">
           <li>Orders</li>
         </a>
+        {
+          isAuthenticated ? (
+            <form action="/api/auth/signout" class="mb-6">
+              <button type="submit" class="hover:text-pink-400">
+                <li>Sign Out</li>
+              </button>
+            </form>
+          ) : (
+            <a href="/signin" class="hover:text-pink-400">
+              <li>Sign In</li>
+            </a>
+          )
+        }
       </ul>
     </div>
   </div>

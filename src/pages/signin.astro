@@ -9,6 +9,9 @@ const refreshToken = cookies.get("sb-refresh-token");
 if (accessToken && refreshToken) {
   return redirect("/dashboard");
 }
+
+// Extracting the error query parameter
+const loginError = Astro.url.searchParams.get("error");
 ---
 
 <Layout title="Sign in">
@@ -58,6 +61,13 @@ if (accessToken && refreshToken) {
         </div>
 
         <div>
+          {
+            loginError && (
+              <div class="text-center text-sm text-red-500 pb-4">
+                Invalid login credentials. Please try again.
+              </div>
+            )
+          }
           <button
             type="submit"
             class="flex w-full justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary_hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
