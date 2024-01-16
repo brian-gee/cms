@@ -87,15 +87,36 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
   const [currentPage, setCurrentPage] = createSignal(1);
   const itemsPerPage = 10; // Adjust as needed
 
+  // State for the search query
+  const [searchQuery, setSearchQuery] = createSignal("");
+
+  // Update search query
+  const updateSearchQuery = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    setSearchQuery(target.value);
+  };
+
   // Function to calculate the slice of data to display
   const paginatedData = () => {
+    const query = searchQuery().toLowerCase();
+    const filteredData = data()?.filter((client) => {
+      const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+      const phone = client.phone.toLowerCase();
+      const email = client.email.toLowerCase();
+      return (
+        fullName.includes(query) ||
+        phone.includes(query) ||
+        email.includes(query)
+      );
+    });
+
     const start = (currentPage() - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return data()?.slice(start, end);
+    return filteredData?.slice(start, end);
   };
 
   // Function to handle page change
-  const setPage = (pageNumber) => {
+  const setPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
@@ -109,20 +130,6 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
 
   const handleClientClick = (client: any) => {
     setSelectedClient(client);
-  };
-
-  const deleteClient = async (clientId: any) => {
-    try {
-      const { error } = await supabase
-        .from("clients")
-        .delete()
-        .eq("id", clientId);
-      if (error) {
-        throw new Error(`Error deleting client: ${error.message}`);
-      }
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   function formatPhoneNumber(phoneNumber: string) {
@@ -140,10 +147,17 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
         <div class="container mt-8">
           <div class="flex justify-between items-center bg-white p-4 rounded-md">
             <h1 class="text-lg font-bold">All Clients</h1>
-            <div class="">
+            <div class="flex justify-between space-x-4">
+              {/* Search Input */}
+              <input
+                type="text"
+                class="shadow border rounded py-2 px-3 text-grey-darker"
+                placeholder="Search clients"
+                onInput={updateSearchQuery}
+              />
               <button
                 onClick={toggleAddModal}
-                class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary_hover transition"
+                class="bg-primary text-white px-4 w-1/3 py-2 rounded-md hover:bg-primary_hover transition"
               >
                 Add Client
               </button>
