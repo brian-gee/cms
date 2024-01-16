@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Card from "../components/Card.astro";
-import ConfettiCard from "../components/ConfettiCard.astro";
+import ConfettiCard from "../components/ConfettiCard.tsx";
 ---
 
 <Layout title="Welcome to CRM">
@@ -27,6 +27,7 @@ import ConfettiCard from "../components/ConfettiCard.astro";
         href=""
         title="Celebrate"
         body="️Get excited about your an amazing way to start tracking your data!"
+        client:idle
       />
     </ul>
   </main>
