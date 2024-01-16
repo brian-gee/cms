@@ -31,7 +31,7 @@ const fetcher: ResourceFetcher<true, ClientEntry[], ClientEntry> = async (
   return [...data, ...prev];
 };
 
-export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
+export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
   const [data, { refetch }] = createResource(fetcher, {
     initialValue: reviews,
     ssrLoadFrom: "initial",

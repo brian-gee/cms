@@ -1,13 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { supabase } from "../../lib/supabase";
+import { OrdersTable, type ClientEntry } from "../../components/OrdersTable";
 
-const { email } = Astro.locals;
+const { data } = (await supabase.from("clients").select("*")) as {
+  data: ClientEntry[];
+};
 ---
 
 <Layout title="Orders">
-  <h1>Welcome {email}</h1>
-  <p>We are happy to see you here</p>
-  <form action="/api/auth/signout">
-    <button type="submit">Sign out</button>
-  </form>
+  <OrdersTable reviews={data} client:idle />
 </Layout>
