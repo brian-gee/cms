@@ -83,23 +83,18 @@ export function OrdersTable() {
   };
 
   // Function to calculate the slice of data to display
-  // const paginatedData = () => {
-  //   const query = searchQuery().toLowerCase();
-  //   const filteredData = data()?.filter((order) => {
-  //     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
-  //     const phone = order.phone.toLowerCase();
-  //     const email = order.email.toLowerCase();
-  //     return (
-  //       fullName.includes(query) ||
-  //       phone.includes(query) ||
-  //       email.includes(query)
-  //     );
-  //   });
+  const paginatedData = () => {
+    const query = searchQuery().toLowerCase();
+    const filteredData = orders()?.filter((order) => {
+      const amount = order.amount.toString().toLowerCase();
+      const status = order.status.toLowerCase();
+      return amount.includes(query) || status.includes(query);
+    });
 
-  //   const start = (currentPage() - 1) * itemsPerPage;
-  //   const end = start + itemsPerPage;
-  //   return filteredData?.slice(start, end);
-  // };
+    const start = (currentPage() - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredData?.slice(start, end);
+  };
 
   // Function to handle page change
   const setPage = (pageNumber: number) => {
@@ -178,7 +173,7 @@ export function OrdersTable() {
                 </tr>
               </thead>
               <tbody class="bg-white">
-                <For each={orders()}>
+                <For each={paginatedData()}>
                   {(order, index) => (
                     <tr class={index() % 2 != 0 ? "bg-gray-100" : ""}>
                       <td
@@ -220,7 +215,7 @@ export function OrdersTable() {
             </table>
             {/* Pagination Controls */}
             <div class="pagination flex justify-center space-x-4 py-4">
-              {Array(Math.ceil(orders().length / itemsPerPage))
+              {Array(Math.ceil(paginatedData().length / itemsPerPage))
                 .fill(0)
                 .map((_, index) => (
                   <button onClick={() => setPage(index + 1)}>
