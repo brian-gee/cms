@@ -1,10 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
-import { OrdersTable, type orderEntry } from "../../components/OrdersTable";
+import { OrdersTable, type OrderEntry } from "../../components/OrdersTable";
 
 const { data } = (await supabase.from("orders").select("*")) as {
-  data: orderEntry[];
+  data: OrderEntry[];
 };
 ---
 
