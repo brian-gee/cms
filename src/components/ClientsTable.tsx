@@ -89,7 +89,7 @@ export function ClientsTable() {
     }
 
     formElement.reset();
-    showAddModal();
+    window.location.href = "/crud/clientSuccess";
   };
 
   // State for managing modal visibility

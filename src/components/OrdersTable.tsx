@@ -62,7 +62,7 @@ export function OrdersTable() {
     }
 
     formElement.reset();
-    toggleAddModal();
+    window.location.href = "/crud/orderSuccess";
   };
   // State for managing modal visibility
   const [showEditModal, setShowEditModal] = createSignal(false);

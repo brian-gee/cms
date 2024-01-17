@@ -1,11 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { supabase } from "../../lib/supabase";
-import { OrdersTable, type OrderEntry } from "../../components/OrdersTable";
-
-const { data } = (await supabase.from("orders").select("*")) as {
-  data: OrderEntry[];
-};
+import { OrdersTable } from "../../components/OrdersTable";
 ---
 
 <Layout title="Orders">
