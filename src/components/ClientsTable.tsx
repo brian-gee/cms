@@ -1,9 +1,8 @@
 import {
-  createResource,
+  createSignal,
+  createEffect,
   For,
   ErrorBoundary,
-  type ResourceFetcher,
-  createSignal,
   Show,
   type JSX,
 } from "solid-js";
@@ -12,35 +11,34 @@ export interface ClientEntry {
   [key: string]: any;
 }
 
-const fetcher: ResourceFetcher<true, ClientEntry[], ClientEntry> = async (
-  _,
-  { refetching, value },
-) => {
-  const res = await fetch("/api/clients", {
-    method: refetching ? "POST" : "GET",
-    body: refetching ? JSON.stringify(refetching) : null,
-  });
+export function ClientsTable() {
+  // Signal for storing client data
+  const [clients, setClients] = createSignal<ClientEntry[]>([]);
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message);
+  // Fetch clients data from the server
+  async function fetchClients() {
+    try {
+      const response = await fetch("/api/clients");
+      if (!response.ok) {
+        throw new Error("Failed to fetch clients");
+      }
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    }
   }
 
-  const prev = value ?? [];
-  return [...data, ...prev];
-};
-
-export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
-  const [data, { refetch }] = createResource(fetcher, {
-    initialValue: reviews,
-    ssrLoadFrom: "initial",
+  // Effect to fetch clients on component mount
+  createEffect(() => {
+    fetchClients();
   });
 
-  // Assuming you want to submit new data - if not, this can be removed
-  const addClientHandler: JSX.EventHandler<HTMLFormElement, SubmitEvent> = (
-    e,
-  ) => {
+  // Handler to add a new client
+  const addClientHandler: JSX.EventHandler<
+    HTMLFormElement,
+    SubmitEvent
+  > = async (e) => {
     e.preventDefault();
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
@@ -62,20 +60,36 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
       !city ||
       !zip ||
       !company
-    )
+    ) {
       return;
-    refetch({
-      first_name,
-      last_name,
-      phone,
-      email,
-      address,
-      city,
-      zip,
-      company,
-    });
+    }
+
+    try {
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name,
+          last_name,
+          phone,
+          email,
+          address,
+          city,
+          zip,
+          company,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add client");
+      }
+      // Fetch the updated list of clients
+      await fetchClients();
+    } catch (error) {
+      console.error("Error adding client:", error);
+    }
+
     formElement.reset();
-    toggleAddModal();
+    showAddModal();
   };
 
   // State for managing modal visibility
@@ -99,7 +113,7 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
   // Function to calculate the slice of data to display
   const paginatedData = () => {
     const query = searchQuery().toLowerCase();
-    const filteredData = data()?.filter((client) => {
+    const filteredData = clients()?.filter((client) => {
       const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
       const phone = client.phone.toLowerCase();
       const email = client.email.toLowerCase();
@@ -234,7 +248,7 @@ export function ClientsTable({ reviews }: { reviews: ClientEntry[] }) {
             </table>
             {/* Pagination Controls */}
             <div class="pagination flex justify-center space-x-4 py-4">
-              {Array(Math.ceil(data().length / itemsPerPage))
+              {Array(Math.ceil(clients().length / itemsPerPage))
                 .fill(0)
                 .map((_, index) => (
                   <button onClick={() => setPage(index + 1)}>

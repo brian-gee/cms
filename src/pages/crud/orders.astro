@@ -9,5 +9,5 @@ const { data } = (await supabase.from("orders").select("*")) as {
 ---
 
 <Layout title="Orders">
-  <OrdersTable orders={data} client:idle />
+  <OrdersTable client:idle />
 </Layout>

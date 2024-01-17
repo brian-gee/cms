@@ -1,9 +1,8 @@
 import {
-  createResource,
+  createSignal,
+  createEffect,
   For,
   ErrorBoundary,
-  type ResourceFetcher,
-  createSignal,
   Show,
   type JSX,
 } from "solid-js";
@@ -12,33 +11,30 @@ export interface OrderEntry {
   [key: string]: any;
 }
 
-const fetcher: ResourceFetcher<true, OrderEntry[], OrderEntry> = async (
-  _,
-  { refetching, value },
-) => {
-  const res = await fetch("/api/orders", {
-    method: refetching ? "POST" : "GET",
-    body: refetching ? JSON.stringify(refetching) : null,
-  });
+export function OrdersTable() {
+  const [orders, setOrders] = createSignal<OrderEntry[]>([]);
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message);
+  // Fetch orders data from the server
+  async function fetchOrders() {
+    try {
+      const response = await fetch("/api/orders");
+      if (!response.ok) {
+        throw new Error("Failed to fetch orders");
+      }
+      const data = await response.json();
+      setOrders(data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
   }
 
-  const prev = value ?? [];
-  return [...data, ...prev];
-};
-
-export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
-  const [data, { refetch }] = createResource(fetcher, {
-    initialValue: orders,
-    ssrLoadFrom: "initial",
+  // Effect to fetch orders on component mount
+  createEffect(() => {
+    fetchOrders();
   });
 
-  // Assuming you want to submit new data - if not, this can be removed
-  const addorderHandler: JSX.EventHandler<
+  // Handler to add a new order
+  const addOrderHandler: JSX.EventHandler<
     HTMLFormElement,
     SubmitEvent
   > = async (e) => {
@@ -50,19 +46,24 @@ export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
 
     if (!amount || !status) return;
 
-    // Await the refetch call
-    await refetch({
-      amount,
-      status,
-    });
-
-    console.log("Refetch completed");
-    console.log(data());
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, status }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add order");
+      }
+      // Fetch the updated list of orders
+      await fetchOrders();
+    } catch (error) {
+      console.error("Error adding order:", error);
+    }
 
     formElement.reset();
     toggleAddModal();
   };
-
   // State for managing modal visibility
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
@@ -82,23 +83,23 @@ export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
   };
 
   // Function to calculate the slice of data to display
-  const paginatedData = () => {
-    const query = searchQuery().toLowerCase();
-    const filteredData = data()?.filter((order) => {
-      const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
-      const phone = order.phone.toLowerCase();
-      const email = order.email.toLowerCase();
-      return (
-        fullName.includes(query) ||
-        phone.includes(query) ||
-        email.includes(query)
-      );
-    });
+  // const paginatedData = () => {
+  //   const query = searchQuery().toLowerCase();
+  //   const filteredData = data()?.filter((order) => {
+  //     const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
+  //     const phone = order.phone.toLowerCase();
+  //     const email = order.email.toLowerCase();
+  //     return (
+  //       fullName.includes(query) ||
+  //       phone.includes(query) ||
+  //       email.includes(query)
+  //     );
+  //   });
 
-    const start = (currentPage() - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredData?.slice(start, end);
-  };
+  //   const start = (currentPage() - 1) * itemsPerPage;
+  //   const end = start + itemsPerPage;
+  //   return filteredData?.slice(start, end);
+  // };
 
   // Function to handle page change
   const setPage = (pageNumber: number) => {
@@ -177,7 +178,7 @@ export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
                 </tr>
               </thead>
               <tbody class="bg-white">
-                <For each={data()}>
+                <For each={orders()}>
                   {(order, index) => (
                     <tr class={index() % 2 != 0 ? "bg-gray-100" : ""}>
                       <td
@@ -219,7 +220,7 @@ export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
             </table>
             {/* Pagination Controls */}
             <div class="pagination flex justify-center space-x-4 py-4">
-              {Array(Math.ceil(data().length / itemsPerPage))
+              {Array(Math.ceil(orders().length / itemsPerPage))
                 .fill(0)
                 .map((_, index) => (
                   <button onClick={() => setPage(index + 1)}>
@@ -267,7 +268,7 @@ export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
                 </div>
                 {/* <!-- Modal body --> */}
                 <div class="p-6 space-y-6">
-                  <form onSubmit={addorderHandler}>
+                  <form onSubmit={addOrderHandler}>
                     <div class="grid grid-cols-6 gap-6">
                       <div class="col-span-6 sm:col-span-3">
                         <label
