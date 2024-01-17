@@ -140,7 +140,7 @@ export function OrdersTable() {
                 onClick={toggleAddModal}
                 class="bg-primary text-white px-4 w-1/3 py-2 rounded-md hover:bg-primary_hover transition"
               >
-                Add order
+                Add Order
               </button>
             </div>
           </div>

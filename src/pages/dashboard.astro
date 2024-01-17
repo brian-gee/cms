@@ -6,19 +6,9 @@ const { email } = Astro.locals;
 
 <Layout title="dashboard">
   <div class="flex flex-col items-center justify-center pt-20">
-    <h1 class="text-3xl font-semibold mb-4">Welcome {email}</h1>
-    <p class="text-xl mb-6">We are happy to see you here</p>
-    <form action="/api/auth/signout" class="mb-6">
-      <button
-        type="submit"
-        class="bg-primary hover:bg-primary_hover text-white font-bold py-2 px-4 rounded"
-        >Sign out</button
-      >
-    </form>
-
-    <!-- Placeholder links -->
-    <a href="#" class="text-blue-500 hover:text-blue-700 mb-2">Link 1</a>
-    <a href="#" class="text-blue-500 hover:text-blue-700 mb-2">Link 2</a>
-    <a href="#" class="text-blue-500 hover:text-blue-700 mb-2">Link 3</a>
+    <h1 class="mb-10 text-6xl font-bold text-center">
+      Welcome {email}
+    </h1>
+    <p class="mb-6 text-xl">We are happy to see you here</p>
   </div>
 </Layout>
