@@ -1,13 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase";
-import { OrdersTable, type ClientEntry } from "../../components/OrdersTable";
+import { OrdersTable, type orderEntry } from "../../components/OrdersTable";
 
-const { data } = (await supabase.from("clients").select("*")) as {
-  data: ClientEntry[];
+const { data } = (await supabase.from("orders").select("*")) as {
+  data: orderEntry[];
 };
 ---
 
 <Layout title="Orders">
-  <OrdersTable reviews={data} client:idle />
+  <OrdersTable orders={data} client:idle />
 </Layout>

@@ -8,15 +8,15 @@ import {
   type JSX,
 } from "solid-js";
 
-export interface ClientEntry {
+export interface OrderEntry {
   [key: string]: any;
 }
 
-const fetcher: ResourceFetcher<true, ClientEntry[], ClientEntry> = async (
+const fetcher: ResourceFetcher<true, OrderEntry[], OrderEntry> = async (
   _,
   { refetching, value },
 ) => {
-  const res = await fetch("/api/clients", {
+  const res = await fetch("/api/orders", {
     method: refetching ? "POST" : "GET",
     body: refetching ? JSON.stringify(refetching) : null,
   });
@@ -31,49 +31,34 @@ const fetcher: ResourceFetcher<true, ClientEntry[], ClientEntry> = async (
   return [...data, ...prev];
 };
 
-export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
+export function OrdersTable({ orders }: { orders: OrderEntry[] }) {
   const [data, { refetch }] = createResource(fetcher, {
-    initialValue: reviews,
+    initialValue: orders,
     ssrLoadFrom: "initial",
   });
 
   // Assuming you want to submit new data - if not, this can be removed
-  const addClientHandler: JSX.EventHandler<HTMLFormElement, SubmitEvent> = (
-    e,
-  ) => {
+  const addorderHandler: JSX.EventHandler<
+    HTMLFormElement,
+    SubmitEvent
+  > = async (e) => {
     e.preventDefault();
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
-    const first_name = formData.get("first_name")?.toString();
-    const last_name = formData.get("last_name")?.toString();
-    const phone = formData.get("phone")?.toString();
-    const email = formData.get("email")?.toString();
-    const address = formData.get("address")?.toString();
-    const city = formData.get("city")?.toString();
-    const zip = formData.get("zip")?.toString();
-    const company = formData.get("company")?.toString();
+    const amount = formData.get("amount");
+    const status = formData.get("status")?.toString();
 
-    if (
-      !first_name ||
-      !last_name ||
-      !phone ||
-      !email ||
-      !address ||
-      !city ||
-      !zip ||
-      !company
-    )
-      return;
-    refetch({
-      first_name,
-      last_name,
-      phone,
-      email,
-      address,
-      city,
-      zip,
-      company,
+    if (!amount || !status) return;
+
+    // Await the refetch call
+    await refetch({
+      amount,
+      status,
     });
+
+    console.log("Refetch completed");
+    console.log(data());
+
     formElement.reset();
     toggleAddModal();
   };
@@ -82,8 +67,8 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
-  const [currentClientId, setCurrentClientId] = createSignal(null);
-  const [selectedClient, setSelectedClient] = createSignal(null);
+  const [currentorderId, setCurrentorderId] = createSignal(null);
+  const [selectedorder, setSelectedorder] = createSignal(null);
   const [currentPage, setCurrentPage] = createSignal(1);
   const itemsPerPage = 10; // Adjust as needed
 
@@ -99,10 +84,10 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
   // Function to calculate the slice of data to display
   const paginatedData = () => {
     const query = searchQuery().toLowerCase();
-    const filteredData = data()?.filter((client) => {
-      const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-      const phone = client.phone.toLowerCase();
-      const email = client.email.toLowerCase();
+    const filteredData = data()?.filter((order) => {
+      const fullName = `${order.first_name} ${order.last_name}`.toLowerCase();
+      const phone = order.phone.toLowerCase();
+      const email = order.email.toLowerCase();
       return (
         fullName.includes(query) ||
         phone.includes(query) ||
@@ -123,13 +108,13 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
   // Toggle functions for modals
   const toggleEditModal = () => setShowEditModal(!showEditModal());
   const toggleAddModal = () => setShowAddModal(!showAddModal());
-  const toggleDeleteModal = (clientId: any) => {
+  const toggleDeleteModal = (orderId: any) => {
     setShowDeleteModal(!showDeleteModal());
-    setCurrentClientId(clientId);
+    setCurrentorderId(orderId);
   };
 
-  const handleClientClick = (client: any) => {
-    setSelectedClient(client);
+  const handleorderClick = (order: any) => {
+    setSelectedorder(order);
   };
 
   function formatPhoneNumber(phoneNumber: string) {
@@ -146,20 +131,20 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
       <ErrorBoundary fallback={<div>Something went wrong</div>}>
         <div class="container mt-8">
           <div class="flex justify-between items-center bg-white p-4 rounded-md">
-            <h1 class="text-lg font-bold">All Clients</h1>
+            <h1 class="text-lg font-bold">All Orders</h1>
             <div class="flex justify-between space-x-4">
               {/* Search Input */}
               <input
                 type="text"
                 class="shadow border rounded py-2 px-3 text-grey-darker"
-                placeholder="Search clients"
+                placeholder="Search orders"
                 onInput={updateSearchQuery}
               />
               <button
                 onClick={toggleAddModal}
                 class="bg-primary text-white px-4 w-1/3 py-2 rounded-md hover:bg-primary_hover transition"
               >
-                Add Client
+                Add order
               </button>
             </div>
           </div>
@@ -172,13 +157,13 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                     <input type="checkbox" />
                   </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Name
+                    Number
                   </th>
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Phone
+                    Amount
                   </th>
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Email
+                    Status
                   </th>
                   {/* <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Address
@@ -192,36 +177,36 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                 </tr>
               </thead>
               <tbody class="bg-white">
-                <For each={paginatedData()}>
-                  {(client, index) => (
+                <For each={data()}>
+                  {(order, index) => (
                     <tr class={index() % 2 != 0 ? "bg-gray-100" : ""}>
                       <td
-                        onClick={() => handleClientClick(client)}
+                        onClick={() => handleorderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {client.first_name + " " + client.last_name}
+                        {order.client_id}
                       </td>
                       <td
-                        onClick={() => handleClientClick(client)}
+                        onClick={() => handleorderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {formatPhoneNumber(client.phone)}
+                        {order.amount}
                       </td>
                       <td
-                        onClick={() => handleClientClick(client)}
+                        onClick={() => handleorderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {client.email}
+                        {order.status}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleClientClick(client)}
+                          onClick={() => handleorderClick(order)}
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           Edit
                         </button>
                         <button
-                          onclick={() => toggleDeleteModal(client.id)}
+                          onclick={() => toggleDeleteModal(order.id)}
                           class="text-primary hover:text-primary_hover ml-4"
                         >
                           Delete
@@ -245,7 +230,7 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
           </div>
         </div>
 
-        {/* <!-- Add Client Modal --> */}
+        {/* <!-- Add order Modal --> */}
         <Show when={showAddModal()}>
           <div
             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -260,7 +245,7 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
               <div class="relative bg-white rounded-lg shadow">
                 {/* <!-- Modal header --> */}
                 <div class="flex items-start justify-between p-5 border-b rounded-t">
-                  <h3 class="text-xl font-semibold">Add new client</h3>
+                  <h3 class="text-xl font-semibold">Add new order</h3>
                   <button
                     type="button"
                     class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center"
@@ -282,133 +267,55 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                 </div>
                 {/* <!-- Modal body --> */}
                 <div class="p-6 space-y-6">
-                  <form onSubmit={addClientHandler}>
+                  <form onSubmit={addorderHandler}>
                     <div class="grid grid-cols-6 gap-6">
                       <div class="col-span-6 sm:col-span-3">
                         <label
-                          for="first-name"
+                          for="amount"
                           class="block mb-2 text-sm font-medium text-gray-900"
                         >
-                          First Name
+                          Amount
                         </label>
                         <input
-                          type="text"
-                          name="first_name"
-                          id="first_name"
+                          type="number"
+                          name="amount"
+                          id="amount"
                           class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 "
-                          placeholder="Bonnie"
+                          placeholder="299.00"
                           required
                         />
                       </div>
                       <div class="col-span-6 sm:col-span-3">
                         <label
-                          for="last_name"
+                          for="status"
                           class="block mb-2 text-sm font-medium text-gray-900 "
                         >
-                          Last Name
+                          Order Status
                         </label>
-                        <input
-                          type="text"
-                          name="last_name"
-                          id="last_name"
+                        <select
+                          name="status"
+                          id="status"
                           class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-                          placeholder="Green"
-                          required
-                        />
+                        >
+                          <option value="not_sent">Not Sent</option>
+                          <option value="pending">Pending</option>
+                          <option value="half_paid">Half-paid</option>
+                          <option value="paid">Paid</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
                       </div>
                       <div class="col-span-6 sm:col-span-3">
                         <label
-                          for="phone"
+                          for="invoice"
                           class="block mb-2 text-sm font-medium text-gray-900"
                         >
-                          Phone
+                          Invoice
                         </label>
                         <input
-                          type="tel"
-                          name="phone"
-                          id="phone"
-                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                          placeholder="9545554444"
-                          required
-                        />
-                      </div>
-                      <div class="col-span-6 sm:col-span-3">
-                        <label
-                          for="email"
-                          class="block mb-2 text-sm font-medium text-gray-900 "
-                        >
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          id="email"
-                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                          placeholder="example@company.com"
-                          required
-                        />
-                      </div>
-                      <div class="col-span-6">
-                        <label
-                          for="address"
-                          class="block mb-2 w-full text-sm font-medium text-gray-900 "
-                        >
-                          Address
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          id="address"
-                          class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500      "
-                          placeholder="123 Lolipop Ln"
-                        ></input>
-                      </div>
-                      <div class="col-span-6 sm:col-span-3">
-                        <label
-                          for="city"
-                          class="block mb-2 text-sm font-medium text-gray-900 "
-                        >
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          name="city"
-                          id="city"
-                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                          placeholder="Miami"
-                          required
-                        />
-                      </div>
-                      <div class="col-span-6 sm:col-span-3">
-                        <label
-                          for="zip"
-                          class="block mb-2 text-sm font-medium text-gray-900 "
-                        >
-                          Zip
-                        </label>
-                        <input
-                          type="text"
-                          name="zip"
-                          id="zip"
-                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                          placeholder="33180"
-                          required
-                        />
-                      </div>
-                      <div class="col-span-6 sm:col-span-3">
-                        <label
-                          for="company"
-                          class="block mb-2 text-sm font-medium text-gray-900 "
-                        >
-                          Company
-                        </label>
-                        <input
-                          type="text"
-                          name="company"
-                          id="company"
-                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                          placeholder="Company"
-                          required
+                          type="file"
+                          name="invoice"
+                          id="invoice"
+                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                         />
                       </div>
                     </div>
@@ -418,7 +325,7 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                         class="text-white bg-black hover:bg-black-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                         type="submit"
                       >
-                        Add client
+                        Add order
                       </button>
                     </div>
                   </form>
@@ -653,11 +560,11 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                     ></path>
                   </svg>
                   <h3 class="mt-5 mb-6 text-lg text-gray-500">
-                    Are you sure you want to delete client with ID:{" "}
-                    {currentClientId()}?
+                    Are you sure you want to delete order with ID:{" "}
+                    {currentorderId()}?
                   </h3>
                   <button
-                    onclick={() => deleteClient(currentClientId())}
+                    onclick={() => deleteorder(currentorderId())}
                     class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2"
                   >
                     Yes, I'm sure
@@ -675,20 +582,20 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
           </div>
         </Show>
 
-        {/* Modal for displaying selected client information */}
-        <Show when={selectedClient()}>
+        {/* Modal for displaying selected order information */}
+        <Show when={selectedorder()}>
           <div
             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
             aria-hidden="true"
           ></div>
           <div
             class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
-            id="client-info-modal"
+            id="order-info-modal"
           >
             <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
               <div class="relative bg-white rounded-lg shadow ">
                 <div class="flex items-start justify-between p-5 border-b rounded-t ">
-                  <h3 class="text-xl font-semibold ">Client Information</h3>
+                  <h3 class="text-xl font-semibold ">order Information</h3>
                   <div>
                     <button class="ml-auto text-indigo-600 hover:text-indigo-900">
                       Edit
@@ -696,7 +603,7 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                     <button
                       type="button"
                       class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center "
-                      onClick={() => setSelectedClient(null)}
+                      onClick={() => setSelectedorder(null)}
                     >
                       <svg
                         class="w-5 h-5"
@@ -714,34 +621,34 @@ export function OrdersTable({ reviews }: { reviews: ClientEntry[] }) {
                   </div>
                 </div>
                 <div class="p-6 space-y-6">
-                  {/* Display client information here */}
+                  {/* Display order information here */}
                   <div>
                     <h4 class="text-lg font-medium">Name</h4>
                     <p>
-                      {selectedClient().first_name} {selectedClient().last_name}
+                      {selectedorder().first_name} {selectedorder().last_name}
                     </p>
                   </div>
                   <div>
                     <h4 class="text-lg font-medium">Phone</h4>
-                    <p>{formatPhoneNumber(selectedClient().phone)}</p>
+                    <p>{formatPhoneNumber(selectedorder().phone)}</p>
                   </div>
                   <div>
                     <h4 class="text-lg font-medium">Email</h4>
-                    <p>{selectedClient().email}</p>
+                    <p>{selectedorder().email}</p>
                   </div>
                   <div>
                     <h4 class="text-lg font-medium">Address</h4>
                     <p>
-                      {selectedClient().address +
+                      {selectedorder().address +
                         " " +
-                        selectedClient().city +
+                        selectedorder().city +
                         " " +
-                        selectedClient().zip}
+                        selectedorder().zip}
                     </p>
                   </div>
                   <div>
                     <h4 class="text-lg font-medium">Company</h4>
-                    <p>{selectedClient().company}</p>
+                    <p>{selectedorder().company}</p>
                   </div>
                   {/* Add more fields as needed */}
                 </div>
