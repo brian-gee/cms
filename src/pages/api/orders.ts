@@ -16,10 +16,11 @@ export const GET: APIRoute = async () => {
 
 // POST Request Handler
 export const POST: APIRoute = async ({ request }) => {
-  const { amount, status } = await request.json();
+  const { amount, status, client_id } = await request.json();
   const { data, error } = await supabase.from("orders").insert({
     amount,
     status,
+    client_id,
   });
 
   if (error) {

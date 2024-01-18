@@ -92,6 +92,24 @@ export function ClientsTable() {
     window.location.href = "/crud/clientSuccess";
   };
 
+  async function deleteClient(clientId: string) {
+    try {
+      const response = await fetch("/api/clients", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: clientId }), // Modify this line
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete order");
+      }
+      // Fetch the updated list of orders
+      await fetchClients();
+      toggleDeleteModalNoId();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  }
+
   // State for managing modal visibility
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
@@ -113,6 +131,7 @@ export function ClientsTable() {
   // Function to calculate the slice of data to display
   const paginatedData = () => {
     const query = searchQuery().toLowerCase();
+
     const filteredData = clients()?.filter((client) => {
       const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
       const phone = client.phone.toLowerCase();
@@ -124,9 +143,14 @@ export function ClientsTable() {
       );
     });
 
+    // Sort the filtered data by first name
+    const sortedData = filteredData?.sort((a, b) =>
+      a.first_name.localeCompare(b.first_name),
+    );
+
     const start = (currentPage() - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredData?.slice(start, end);
+    return sortedData?.slice(start, end);
   };
 
   // Function to handle page change
@@ -137,6 +161,7 @@ export function ClientsTable() {
   // Toggle functions for modals
   const toggleEditModal = () => setShowEditModal(!showEditModal());
   const toggleAddModal = () => setShowAddModal(!showAddModal());
+  const toggleDeleteModalNoId = () => setShowDeleteModal(!showDeleteModal());
   const toggleDeleteModal = (clientId: any) => {
     setShowDeleteModal(!showDeleteModal());
     setCurrentClientId(clientId);

@@ -17,12 +17,32 @@ export function OrdersTable() {
   // Fetch orders data from the server
   async function fetchOrders() {
     try {
-      const response = await fetch("/api/orders");
-      if (!response.ok) {
+      const ordersResponse = await fetch("/api/orders");
+      if (!ordersResponse.ok) {
         throw new Error("Failed to fetch orders");
       }
-      const data = await response.json();
-      setOrders(data);
+      const ordersData = await ordersResponse.json();
+
+      const clientsResponse = await fetch("/api/clients");
+      if (!clientsResponse.ok) {
+        throw new Error("Failed to fetch clients");
+      }
+      const clientsData = await clientsResponse.json();
+
+      // Map orders to include client names
+      const ordersWithClientNames = ordersData.map((order) => {
+        const client = clientsData.find(
+          (client) => client.id === order.client_id,
+        );
+        return {
+          ...order,
+          clientName: client
+            ? `${client.first_name} ${client.last_name}`
+            : "Unknown",
+        };
+      });
+
+      setOrders(ordersWithClientNames);
     } catch (error) {
       console.error("Error fetching orders:", error);
     }
@@ -32,6 +52,43 @@ export function OrdersTable() {
   createEffect(() => {
     fetchOrders();
   });
+
+  // State for storing clients
+  const [clients, setClients] = createSignal([]);
+  const [selectedClientId, setSelectedClientId] = createSignal(null);
+  const [searchTerm, setSearchTerm] = createSignal("");
+
+  // Fetch clients from Supabase
+  async function fetchClients() {
+    try {
+      const response = await fetch("/api/clients");
+      if (!response.ok) {
+        throw new Error("Failed to fetch clients");
+      }
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    }
+  }
+
+  // Call fetchClients on component mount
+  createEffect(() => {
+    fetchClients();
+  });
+
+  // Filter clients based on search term
+  const filteredClients = () => {
+    return clients()
+      .filter(
+        (client) =>
+          client.first_name
+            .toLowerCase()
+            .includes(searchTerm().toLowerCase()) ||
+          client.last_name.toLowerCase().includes(searchTerm().toLowerCase()),
+      )
+      .sort((a, b) => a.first_name.localeCompare(b.first_name)); // Sorting alphabetically by first name
+  };
 
   // Handler to add a new order
   const addOrderHandler: JSX.EventHandler<
@@ -43,14 +100,15 @@ export function OrdersTable() {
     const formData = new FormData(formElement);
     const amount = formData.get("amount");
     const status = formData.get("status")?.toString();
+    const client_id = formData.get("client");
 
-    if (!amount || !status) return;
+    if (!amount || !status || !client_id) return;
 
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, status }),
+        body: JSON.stringify({ amount, status, client_id }),
       });
       if (!response.ok) {
         throw new Error("Failed to add order");
@@ -64,6 +122,25 @@ export function OrdersTable() {
     formElement.reset();
     window.location.href = "/crud/orderSuccess";
   };
+
+  async function deleteOrder(orderId: string) {
+    try {
+      const response = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId }), // Modify this line
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete order");
+      }
+      // Fetch the updated list of orders
+      await fetchOrders();
+      toggleDeleteModalNoOrder();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  }
+
   // State for managing modal visibility
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
@@ -104,6 +181,7 @@ export function OrdersTable() {
   // Toggle functions for modals
   const toggleEditModal = () => setShowEditModal(!showEditModal());
   const toggleAddModal = () => setShowAddModal(!showAddModal());
+  const toggleDeleteModalNoOrder = () => setShowDeleteModal(!showDeleteModal());
   const toggleDeleteModal = (orderId: any) => {
     setShowDeleteModal(!showDeleteModal());
     setCurrentorderId(orderId);
@@ -153,7 +231,7 @@ export function OrdersTable() {
                     <input type="checkbox" />
                   </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Number
+                    Client
                   </th>
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Amount
@@ -180,13 +258,16 @@ export function OrdersTable() {
                         onClick={() => handleorderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {order.client_id}
+                        {order.clientName}
                       </td>
                       <td
                         onClick={() => handleorderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
-                        {order.amount}
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: "USD",
+                        }).format(order.amount)}
                       </td>
                       <td
                         onClick={() => handleorderClick(order)}
@@ -274,6 +355,7 @@ export function OrdersTable() {
                         </label>
                         <input
                           type="number"
+                          step="any"
                           name="amount"
                           id="amount"
                           class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 "
@@ -298,6 +380,34 @@ export function OrdersTable() {
                           <option value="half_paid">Half-paid</option>
                           <option value="paid">Paid</option>
                           <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
+                      <div class="col-span-6">
+                        <label
+                          for="client"
+                          class="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Select Client
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Search client"
+                          onInput={(e) => setSearchTerm(e.target.value)}
+                          class="mb-2 shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                        />
+                        <select
+                          name="client"
+                          id="client"
+                          onChange={(e) => setSelectedClientId(e.target.value)}
+                          class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                        >
+                          <For each={filteredClients()}>
+                            {(client) => (
+                              <option value={client.id}>
+                                {client.first_name} {client.last_name}
+                              </option>
+                            )}
+                          </For>
                         </select>
                       </div>
                       <div class="col-span-6 sm:col-span-3">
@@ -331,7 +441,7 @@ export function OrdersTable() {
           </div>
         </Show>
 
-        {/* // <!-- Edit User Modal --> */}
+        {/* // <!-- Edit Order Modal --> */}
         <Show when={showEditModal()}>
           <div
             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -505,7 +615,7 @@ export function OrdersTable() {
           </div>
         </Show>
 
-        {/* <!-- Delete User Modal --> */}
+        {/* <!-- Delete Order Modal --> */}
         <Show when={showDeleteModal()}>
           <div
             class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -560,18 +670,18 @@ export function OrdersTable() {
                     {currentorderId()}?
                   </h3>
                   <button
-                    onclick={() => deleteorder(currentorderId())}
+                    onclick={() => deleteOrder(currentorderId())}
                     class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2"
                   >
                     Yes, I'm sure
                   </button>
-                  <a
-                    href="#"
+                  <button
+                    onclick={toggleDeleteModal}
                     class="text-gray-900 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-primary-300 border border-gray-200 font-medium inline-flex items-center rounded-lg text-base px-3 py-2.5 text-center"
                     data-modal-toggle="delete-user-modal"
                   >
                     No, cancel
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
