@@ -1,5 +1,5 @@
 import { createSignal, onMount } from "solid-js";
-import { confetti } from "canvas-confetti";
+import confetti from "canvas-confetti";
 
 function LinkCard(props) {
   let confettiAnchor;
