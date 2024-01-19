@@ -143,10 +143,6 @@ export function OrdersTable() {
             <table class="min-w-full table-auto">
               <thead class="bg-gray-200">
                 <tr>
-                  {/* Headers - Adjust according to your data keys */}
-                  {/* <th class="px-6 py-3">
-                    <input type="checkbox" />
-                  </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Client
                   </th>
@@ -156,12 +152,6 @@ export function OrdersTable() {
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  {/* <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Address
-                  </th>
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Company
-                  </th> */}
                   <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
