@@ -2,6 +2,7 @@ import { createSignal, createEffect, For, ErrorBoundary, Show } from "solid-js";
 import { AddClientModal } from "./Modals/Clients/AddClientModal";
 import { DeleteClientModal } from "./Modals/Clients/DeleteClientModal";
 import { ShowSelectedClientModal } from "./Modals/Clients/ShowSelectedClientModal";
+import { EditClientModal } from "./Modals/Clients/EditClientModal";
 
 export interface ClientEntry {
   [key: string]: any;
@@ -11,10 +12,10 @@ export function ClientsTable() {
   // Signal for storing client data
   const [clients, setClients] = createSignal<ClientEntry[]>([]);
   // State for managing modal visibility
-  const [showEditModal, setShowEditModal] = createSignal(false);
   const [showAddModal, setShowAddModal] = createSignal(false);
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
   const [selectedClient, setSelectedClient] = createSignal(null);
+  const [editSelectedClient, setEditSelectedClient] = createSignal(null);
   const [currentClientId, setCurrentClientId] = createSignal(null);
   // State for the search query
   const [searchQuery, setSearchQuery] = createSignal("");
@@ -78,7 +79,6 @@ export function ClientsTable() {
   };
 
   // Toggle functions for modals
-  const toggleEditModal = () => setShowEditModal(!showEditModal());
   const toggleAddModal = () => setShowAddModal(!showAddModal());
   const toggleDeleteModalNoId = () => setShowDeleteModal(!showDeleteModal());
   const toggleDeleteModal = (clientId: any) => {
@@ -88,6 +88,9 @@ export function ClientsTable() {
 
   const handleClientClick = (client: any) => {
     setSelectedClient(client);
+  };
+  const handleEditClick = (client: any) => {
+    setEditSelectedClient(client);
   };
 
   function formatPhoneNumber(phoneNumber: string) {
@@ -173,7 +176,7 @@ export function ClientsTable() {
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleClientClick(client)}
+                          onClick={() => handleEditClick(client)}
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           Edit
@@ -221,6 +224,12 @@ export function ClientsTable() {
           selectedClient={selectedClient}
           setSelectedClient={setSelectedClient}
           formatPhoneNumber={formatPhoneNumber}
+          setEditSelectedClient={setEditSelectedClient}
+        />
+
+        <EditClientModal
+          editSelectedClient={editSelectedClient}
+          setEditSelectedClient={setEditSelectedClient}
         />
       </ErrorBoundary>
     </div>

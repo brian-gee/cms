@@ -48,12 +48,9 @@ export function AddClientModal({ fetchClients, showAddModal, toggleAddModal }) {
       if (!response.ok) {
         throw new Error("Failed to add client");
       }
-      // Fetch the updated list of clients
-      await fetchClients();
     } catch (error) {
       console.error("Error adding client:", error);
     }
-
     formElement.reset();
     window.location.href = "/crud/clientSuccess";
   };

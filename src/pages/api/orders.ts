@@ -48,12 +48,13 @@ export const DELETE: APIRoute = async ({ request }) => {
 
 // PUT Request Handler for editing
 export const PUT: APIRoute = async ({ request }) => {
-  const { id, amount, status } = await request.json();
+  const { id, amount, status, client_id } = await request.json();
   const { data, error } = await supabase
     .from("orders")
     .update({
       amount,
       status,
+      client_id,
     })
     .match({ id });
 

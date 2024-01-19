@@ -1,7 +1,6 @@
 import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
 
 export function AddOrderModal({
-  fetchOrders,
   showAddModal,
   toggleAddModal,
   setSelectedClientId,
@@ -29,8 +28,6 @@ export function AddOrderModal({
       if (!response.ok) {
         throw new Error("Failed to add order");
       }
-      // Fetch the updated list of orders
-      await fetchOrders();
     } catch (error) {
       console.error("Error adding order:", error);
     }

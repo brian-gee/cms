@@ -4,6 +4,7 @@ export function ShowSelectedClientModal({
   selectedClient,
   setSelectedClient,
   formatPhoneNumber,
+  setEditSelectedClient,
 }) {
   return (
     <Show when={selectedClient()}>
@@ -20,7 +21,13 @@ export function ShowSelectedClientModal({
             <div class="flex items-start justify-between p-5 border-b rounded-t ">
               <h3 class="text-xl font-semibold ">Client Information</h3>
               <div>
-                <button class="ml-auto text-indigo-600 hover:text-indigo-900">
+                <button
+                  class="ml-auto text-indigo-600 hover:text-indigo-900"
+                  onClick={() =>
+                    setEditSelectedClient(selectedClient) &&
+                    setSelectedClient(null)
+                  }
+                >
                   Edit
                 </button>
                 <button

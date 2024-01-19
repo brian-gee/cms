@@ -1,11 +1,7 @@
 import { Show, type JSX } from "solid-js";
 
-export function EditClientModal({
-  fetchClients,
-  showAddModal,
-  toggleAddModal,
-}) {
-  const addClientHandler: JSX.EventHandler<
+export function EditClientModal({ editSelectedClient, setEditSelectedClient }) {
+  const editClientHandler: JSX.EventHandler<
     HTMLFormElement,
     SubmitEvent
   > = async (e) => {
@@ -36,9 +32,10 @@ export function EditClientModal({
 
     try {
       const response = await fetch("/api/clients", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: editSelectedClient().id,
           first_name,
           last_name,
           phone,
@@ -52,8 +49,6 @@ export function EditClientModal({
       if (!response.ok) {
         throw new Error("Failed to add client");
       }
-      // Fetch the updated list of clients
-      await fetchClients();
     } catch (error) {
       console.error("Error adding client:", error);
     }
@@ -61,9 +56,8 @@ export function EditClientModal({
     formElement.reset();
     window.location.href = "/crud/clientSuccess";
   };
-
   return (
-    <Show when={showAddModal()}>
+    <Show when={editSelectedClient()}>
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
         aria-hidden="true"
@@ -77,11 +71,11 @@ export function EditClientModal({
           <div class="relative bg-white rounded-lg shadow">
             {/* <!-- Modal header --> */}
             <div class="flex items-start justify-between p-5 border-b rounded-t">
-              <h3 class="text-xl font-semibold">Add new client</h3>
+              <h3 class="text-xl font-semibold">Edit client</h3>
               <button
                 type="button"
                 class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center"
-                onClick={toggleAddModal}
+                onClick={() => setEditSelectedClient(null)}
               >
                 <svg
                   class="w-5 h-5"
@@ -99,7 +93,7 @@ export function EditClientModal({
             </div>
             {/* <!-- Modal body --> */}
             <div class="p-6 space-y-6">
-              <form onSubmit={addClientHandler}>
+              <form onSubmit={editClientHandler}>
                 <div class="grid grid-cols-6 gap-6">
                   <div class="col-span-6 sm:col-span-3">
                     <label
@@ -115,6 +109,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 "
                       placeholder="Bonnie"
                       required
+                      value={editSelectedClient().first_name}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -131,6 +126,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                       placeholder="Green"
                       required
+                      value={editSelectedClient().last_name}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -147,6 +143,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="9545554444"
                       required
+                      value={editSelectedClient().phone}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -163,6 +160,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="example@company.com"
                       required
+                      value={editSelectedClient().email}
                     />
                   </div>
                   <div class="col-span-6">
@@ -178,6 +176,7 @@ export function EditClientModal({
                       id="address"
                       class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500      "
                       placeholder="123 Lolipop Ln"
+                      value={editSelectedClient().address}
                     ></input>
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -194,6 +193,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="Miami"
                       required
+                      value={editSelectedClient().city}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -210,6 +210,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="33180"
                       required
+                      value={editSelectedClient().zip}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -226,6 +227,7 @@ export function EditClientModal({
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="Company"
                       required
+                      value={editSelectedClient().company}
                     />
                   </div>
                 </div>
@@ -235,7 +237,7 @@ export function EditClientModal({
                     class="text-white bg-black hover:bg-black-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                     type="submit"
                   >
-                    Add client
+                    Save changes
                   </button>
                 </div>
               </form>

@@ -1,15 +1,9 @@
-import {
-  createSignal,
-  createEffect,
-  For,
-  ErrorBoundary,
-  Show,
-  type JSX,
-} from "solid-js";
+import { createSignal, createEffect, For, ErrorBoundary } from "solid-js";
 
 import { AddOrderModal } from "./Modals/Orders/AddOrderModal";
 import { DeleteOrderModal } from "./Modals/Orders/DeleteOrderModal";
 import { ShowSelectedOrderModal } from "./Modals/Orders/ShowSelectedOrderModal";
+import { EditOrderModal } from "./Modals/Orders/EditOrderModal";
 
 export interface OrderEntry {
   [key: string]: any;
@@ -25,6 +19,7 @@ export function OrdersTable() {
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
   const [currentOrderId, setCurrentOrderId] = createSignal(null);
   const [selectedOrder, setSelectedOrder] = createSignal(null);
+  const [editSelectedOrder, setEditSelectedOrder] = createSignal(null);
   // State for the search query
   const [searchQuery, setSearchQuery] = createSignal("");
   // State for pagination
@@ -104,18 +99,12 @@ export function OrdersTable() {
     setCurrentOrderId(orderId);
   };
 
-  const handleorderClick = (order: any) => {
+  const handleOrderClick = (order: any) => {
     setSelectedOrder(order);
   };
-
-  function formatPhoneNumber(phoneNumber: string) {
-    const cleaned = ("" + phoneNumber).replace(/\D/g, "");
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
-    }
-    return null;
-  }
+  const handleEditOrderClick = (order: any) => {
+    setEditSelectedOrder(order);
+  };
 
   return (
     <div class="max-w-3xl w-full mx-auto">
@@ -162,13 +151,13 @@ export function OrdersTable() {
                   {(order, index) => (
                     <tr class={index() % 2 != 0 ? "bg-gray-100" : ""}>
                       <td
-                        onClick={() => handleorderClick(order)}
+                        onClick={() => handleOrderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
                         {order.clientName}
                       </td>
                       <td
-                        onClick={() => handleorderClick(order)}
+                        onClick={() => handleOrderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
                         {new Intl.NumberFormat("en-US", {
@@ -177,14 +166,14 @@ export function OrdersTable() {
                         }).format(order.amount)}
                       </td>
                       <td
-                        onClick={() => handleorderClick(order)}
+                        onClick={() => handleOrderClick(order)}
                         class="px-6 py-4 whitespace-nowrap cursor-pointer"
                       >
                         {order.status}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleorderClick(order)}
+                          onClick={() => handleEditOrderClick(order)}
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           Edit
@@ -215,7 +204,6 @@ export function OrdersTable() {
         </div>
 
         <AddOrderModal
-          fetchOrders={fetchOrders}
           showAddModal={showAddModal}
           toggleAddModal={toggleAddModal}
           setSelectedClientId={setSelectedClientId}
@@ -232,6 +220,13 @@ export function OrdersTable() {
         <ShowSelectedOrderModal
           selectedOrder={selectedOrder}
           setselectedOrder={setSelectedOrder}
+          setEditSelectedOrder={setEditSelectedOrder}
+        />
+
+        <EditOrderModal
+          editSelectedOrder={editSelectedOrder}
+          setEditSelectedOrder={setEditSelectedOrder}
+          setSelectedClientId={setSelectedClientId}
         />
       </ErrorBoundary>
     </div>

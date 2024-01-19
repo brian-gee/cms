@@ -1,6 +1,10 @@
 import { Show } from "solid-js";
 
-export function ShowSelectedOrderModal({ selectedOrder, setselectedOrder }) {
+export function ShowSelectedOrderModal({
+  selectedOrder,
+  setselectedOrder,
+  setEditSelectedOrder,
+}) {
   return (
     <Show when={selectedOrder()}>
       <div
@@ -16,7 +20,13 @@ export function ShowSelectedOrderModal({ selectedOrder, setselectedOrder }) {
             <div class="flex items-start justify-between p-5 border-b rounded-t ">
               <h3 class="text-xl font-semibold ">order Information</h3>
               <div>
-                <button class="ml-auto text-indigo-600 hover:text-indigo-900">
+                <button
+                  class="ml-auto text-indigo-600 hover:text-indigo-900"
+                  onClick={() =>
+                    setEditSelectedOrder(selectedOrder()) &&
+                    setselectedOrder(null)
+                  }
+                >
                   Edit
                 </button>
                 <button
@@ -42,32 +52,25 @@ export function ShowSelectedOrderModal({ selectedOrder, setselectedOrder }) {
             <div class="p-6 space-y-6">
               {/* Display order information here */}
               <div>
-                <h4 class="text-lg font-medium">Name</h4>
+                <h4 class="text-lg font-medium">Client</h4>
+                <p>{selectedOrder().clientName}</p>
+              </div>
+              <div>
+                <h4 class="text-lg font-medium">Amount</h4>
                 <p>
-                  {selectedOrder().first_name} {selectedOrder().last_name}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(selectedOrder().amount)}
                 </p>
               </div>
               <div>
-                <h4 class="text-lg font-medium">Phone</h4>
-                {/* <p>{formatPhoneNumber(selectedOrder().phone)}</p> */}
+                <h4 class="text-lg font-medium">Status</h4>
+                <p>{selectedOrder().status}</p>
               </div>
               <div>
-                <h4 class="text-lg font-medium">Email</h4>
-                <p>{selectedOrder().email}</p>
-              </div>
-              <div>
-                <h4 class="text-lg font-medium">Address</h4>
-                <p>
-                  {selectedOrder().address +
-                    " " +
-                    selectedOrder().city +
-                    " " +
-                    selectedOrder().zip}
-                </p>
-              </div>
-              <div>
-                <h4 class="text-lg font-medium">Company</h4>
-                <p>{selectedOrder().company}</p>
+                <h4 class="text-lg font-medium">Invoice</h4>
+                <p></p>
               </div>
               {/* Add more fields as needed */}
             </div>

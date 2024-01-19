@@ -1,65 +1,82 @@
-import { Show, type JSX } from "solid-js";
+import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
 
-export function EditOrderModal({ fetchClients, showAddModal, toggleAddModal }) {
-  const addClientHandler: JSX.EventHandler<
+export function EditOrderModal({
+  editSelectedOrder,
+  setEditSelectedOrder,
+  setSelectedClientId,
+}) {
+  // Handler to add a new order
+  const editOrderHandler: JSX.EventHandler<
     HTMLFormElement,
     SubmitEvent
   > = async (e) => {
     e.preventDefault();
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
-    const first_name = formData.get("first_name")?.toString();
-    const last_name = formData.get("last_name")?.toString();
-    const phone = formData.get("phone")?.toString();
-    const email = formData.get("email")?.toString();
-    const address = formData.get("address")?.toString();
-    const city = formData.get("city")?.toString();
-    const zip = formData.get("zip")?.toString();
-    const company = formData.get("company")?.toString();
+    const amount = formData.get("amount");
+    const status = formData.get("status")?.toString();
+    const client_id = formData.get("client");
 
-    if (
-      !first_name ||
-      !last_name ||
-      !phone ||
-      !email ||
-      !address ||
-      !city ||
-      !zip ||
-      !company
-    ) {
-      return;
-    }
+    if (!amount || !status || !client_id) return;
 
     try {
-      const response = await fetch("/api/clients", {
-        method: "POST",
+      const response = await fetch("/api/orders", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name,
-          last_name,
-          phone,
-          email,
-          address,
-          city,
-          zip,
-          company,
+          id: editSelectedOrder().id,
+          amount,
+          status,
+          client_id,
         }),
       });
       if (!response.ok) {
-        throw new Error("Failed to add client");
+        throw new Error("Failed to edit order");
       }
-      // Fetch the updated list of clients
-      await fetchClients();
     } catch (error) {
-      console.error("Error adding client:", error);
+      console.error("Error editing order:", error);
     }
 
     formElement.reset();
-    window.location.href = "/crud/clientSuccess";
+    window.location.href = "/crud/orderSuccess";
+  };
+
+  const [clients, setClients] = createSignal([]);
+  const [searchTerm, setSearchTerm] = createSignal("");
+  // Fetch clients from Supabase
+  async function fetchClients() {
+    try {
+      const response = await fetch("/api/clients");
+      if (!response.ok) {
+        throw new Error("Failed to fetch clients");
+      }
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    }
+  }
+
+  // Call fetchClients on component mount
+  createEffect(() => {
+    fetchClients();
+  });
+
+  // Filter clients based on search term
+  const filteredClients = () => {
+    return clients()
+      .filter(
+        (client) =>
+          client.first_name
+            .toLowerCase()
+            .includes(searchTerm().toLowerCase()) ||
+          client.last_name.toLowerCase().includes(searchTerm().toLowerCase()),
+      )
+      .sort((a, b) => a.first_name.localeCompare(b.first_name)); // Sorting alphabetically by first name
   };
 
   return (
-    <Show when={showAddModal()}>
+    <Show when={editSelectedOrder()}>
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
         aria-hidden="true"
@@ -73,11 +90,11 @@ export function EditOrderModal({ fetchClients, showAddModal, toggleAddModal }) {
           <div class="relative bg-white rounded-lg shadow">
             {/* <!-- Modal header --> */}
             <div class="flex items-start justify-between p-5 border-b rounded-t">
-              <h3 class="text-xl font-semibold">Add new client</h3>
+              <h3 class="text-xl font-semibold">Edit order</h3>
               <button
                 type="button"
                 class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center"
-                onClick={toggleAddModal}
+                onClick={() => setEditSelectedOrder(null)}
               >
                 <svg
                   class="w-5 h-5"
@@ -95,133 +112,87 @@ export function EditOrderModal({ fetchClients, showAddModal, toggleAddModal }) {
             </div>
             {/* <!-- Modal body --> */}
             <div class="p-6 space-y-6">
-              <form onSubmit={addClientHandler}>
+              <form onSubmit={editOrderHandler}>
                 <div class="grid grid-cols-6 gap-6">
                   <div class="col-span-6 sm:col-span-3">
                     <label
-                      for="first-name"
+                      for="amount"
                       class="block mb-2 text-sm font-medium text-gray-900"
                     >
-                      First Name
+                      Amount
                     </label>
                     <input
-                      type="text"
-                      name="first_name"
-                      id="first_name"
+                      type="number"
+                      step="any"
+                      name="amount"
+                      id="amount"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 "
-                      placeholder="Bonnie"
+                      placeholder="299.00"
                       required
+                      value={editSelectedOrder().amount}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
                     <label
-                      for="last_name"
+                      for="status"
                       class="block mb-2 text-sm font-medium text-gray-900 "
                     >
-                      Last Name
+                      Order Status
                     </label>
-                    <input
-                      type="text"
-                      name="last_name"
-                      id="last_name"
+                    <select
+                      name="status"
+                      id="status"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-                      placeholder="Green"
-                      required
-                    />
-                  </div>
-                  <div class="col-span-6 sm:col-span-3">
-                    <label
-                      for="phone"
-                      class="block mb-2 text-sm font-medium text-gray-900"
+                      value={editSelectedOrder().status}
                     >
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      id="phone"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                      placeholder="9545554444"
-                      required
-                    />
-                  </div>
-                  <div class="col-span-6 sm:col-span-3">
-                    <label
-                      for="email"
-                      class="block mb-2 text-sm font-medium text-gray-900 "
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                      placeholder="example@company.com"
-                      required
-                    />
+                      <option value="not_sent">Not Sent</option>
+                      <option value="pending">Pending</option>
+                      <option value="half_paid">Half-paid</option>
+                      <option value="paid">Paid</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
                   </div>
                   <div class="col-span-6">
                     <label
-                      for="address"
-                      class="block mb-2 w-full text-sm font-medium text-gray-900 "
+                      for="client"
+                      class="block mb-2 text-sm font-medium text-gray-900"
                     >
-                      Address
+                      Select Client
                     </label>
                     <input
                       type="text"
-                      name="address"
-                      id="address"
-                      class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500      "
-                      placeholder="123 Lolipop Ln"
-                    ></input>
-                  </div>
-                  <div class="col-span-6 sm:col-span-3">
-                    <label
-                      for="city"
-                      class="block mb-2 text-sm font-medium text-gray-900 "
-                    >
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      id="city"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                      placeholder="Miami"
-                      required
+                      placeholder="Search client"
+                      onInput={(e) => setSearchTerm(e.target.value)}
+                      class="mb-2 shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
+                    <select
+                      name="client"
+                      id="client"
+                      onChange={(e) => setSelectedClientId(e.target.value)}
+                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      value={editSelectedOrder().client_id}
+                    >
+                      <For each={filteredClients()}>
+                        {(client) => (
+                          <option value={client.id}>
+                            {client.first_name} {client.last_name}
+                          </option>
+                        )}
+                      </For>
+                    </select>
                   </div>
                   <div class="col-span-6 sm:col-span-3">
                     <label
-                      for="zip"
-                      class="block mb-2 text-sm font-medium text-gray-900 "
+                      for="invoice"
+                      class="block mb-2 text-sm font-medium text-gray-900"
                     >
-                      Zip
+                      Invoice
                     </label>
                     <input
-                      type="text"
-                      name="zip"
-                      id="zip"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                      placeholder="33180"
-                      required
-                    />
-                  </div>
-                  <div class="col-span-6 sm:col-span-3">
-                    <label
-                      for="company"
-                      class="block mb-2 text-sm font-medium text-gray-900 "
-                    >
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      name="company"
-                      id="company"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
-                      placeholder="Company"
-                      required
+                      type="file"
+                      name="invoice"
+                      id="invoice"
+                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
                   </div>
                 </div>
@@ -231,7 +202,7 @@ export function EditOrderModal({ fetchClients, showAddModal, toggleAddModal }) {
                     class="text-white bg-black hover:bg-black-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                     type="submit"
                   >
-                    Add client
+                    Save order
                   </button>
                 </div>
               </form>
