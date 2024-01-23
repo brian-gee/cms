@@ -1,4 +1,11 @@
-import { createSignal, createEffect, For, ErrorBoundary, Show } from "solid-js";
+import {
+  createSignal,
+  createEffect,
+  For,
+  ErrorBoundary,
+  Show,
+  createMemo,
+} from "solid-js";
 import { AddClientModal } from "./Modals/Clients/AddClientModal";
 import { DeleteClientModal } from "./Modals/Clients/DeleteClientModal";
 import { ShowSelectedClientModal } from "./Modals/Clients/ShowSelectedClientModal";
@@ -9,6 +16,8 @@ export interface ClientEntry {
 }
 
 export function ClientsTable() {
+  const tableHeaders = ["Name", "Phone", "Email", "Actions"];
+
   // Signal for storing client data
   const [clients, setClients] = createSignal<ClientEntry[]>([]);
   // State for managing modal visibility
@@ -20,8 +29,11 @@ export function ClientsTable() {
   // State for the search query
   const [searchQuery, setSearchQuery] = createSignal("");
   // State for pagination
-  const [currentPage, setCurrentPage] = createSignal(1);
-  const itemsPerPage = 10; // How many items should be displayed
+  const itemsPerPage = 10;
+  const [page, setPage] = createSignal(1);
+  const totalPages = () => Math.ceil(clients().length / itemsPerPage);
+  const start = () => (page() - 1) * itemsPerPage;
+  const end = () => start() + itemsPerPage;
 
   // Fetch clients data from the server
   async function fetchClients() {
@@ -49,9 +61,10 @@ export function ClientsTable() {
   };
 
   // Function to calculate the slice of data to display
-  const paginatedData = () => {
+  const paginatedData = createMemo(() => {
     const query = searchQuery().toLowerCase();
 
+    // Filter the data based on the search query
     const filteredData = clients()?.filter((client) => {
       const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
       const phone = client.phone.toLowerCase();
@@ -68,15 +81,13 @@ export function ClientsTable() {
       a.first_name.localeCompare(b.first_name),
     );
 
-    const start = (currentPage() - 1) * itemsPerPage;
+    // Calculate start and end indices for pagination
+    const start = (page() - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return sortedData?.slice(start, end);
-  };
 
-  // Function to handle page change
-  const setPage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
+    // Slice the sorted data for pagination
+    return sortedData?.slice(start, end);
+  });
 
   // Toggle functions for modals
   const toggleAddModal = () => setShowAddModal(!showAddModal());
@@ -128,28 +139,13 @@ export function ClientsTable() {
             <table class="min-w-full table-auto">
               <thead class="bg-gray-200">
                 <tr>
-                  {/* Headers - Adjust according to your data keys */}
-                  {/* <th class="px-6 py-3">
-                    <input type="checkbox" />
-                  </th> */}
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Email
-                  </th>
-                  {/* <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Address
-                  </th>
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Company
-                  </th> */}
-                  <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <For each={tableHeaders}>
+                    {(header) => (
+                      <th class="px-6 py-3 border-b border-gray-300 text-left text-xs font-medium uppercase tracking-wider">
+                        {header}
+                      </th>
+                    )}
+                  </For>
                 </tr>
               </thead>
               <tbody class="bg-white">
@@ -193,15 +189,105 @@ export function ClientsTable() {
                 </For>
               </tbody>
             </table>
-            {/* Pagination Controls */}
-            <div class="pagination flex justify-center space-x-4 py-4">
-              {Array(Math.ceil(clients().length / itemsPerPage))
-                .fill(0)
-                .map((_, index) => (
-                  <button onClick={() => setPage(index + 1)}>
-                    {index + 1}
+            <div>
+              {/* Pagination */}
+              <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                <div class="flex flex-1 justify-between sm:hidden">
+                  <button
+                    onClick={() => setPage(page() > 1 ? page() - 1 : 1)}
+                    class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Previous
                   </button>
-                ))}
+                  <button
+                    onClick={() =>
+                      setPage(page() < totalPages() ? page() + 1 : totalPages())
+                    }
+                    class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p class="text-sm text-gray-700">
+                      Showing
+                      <span class="font-medium mx-1">{start() + 1}</span>
+                      to
+                      <span class="font-medium mx-1">
+                        {Math.min(end(), clients().length)}
+                      </span>
+                      of
+                      <span class="font-medium mx-1">{clients().length}</span>
+                      results
+                    </p>
+                  </div>
+
+                  <div>
+                    <nav
+                      class="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                      aria-label="Pagination"
+                    >
+                      <button
+                        onClick={() => setPage(page() > 1 ? page() - 1 : 1)}
+                        class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                      >
+                        <svg
+                          class="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Pagination Buttons */}
+                      {Array.from(
+                        { length: totalPages() },
+                        (_, i) => i + 1,
+                      ).map((p) => (
+                        <button
+                          onClick={() => setPage(p)}
+                          class={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                            page() === p
+                              ? "bg-primary text-white"
+                              : "text-gray-900"
+                          } ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() =>
+                          setPage(
+                            page() < totalPages() ? page() + 1 : totalPages(),
+                          )
+                        }
+                        class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                      >
+                        <svg
+                          class="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

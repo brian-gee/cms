@@ -73,10 +73,6 @@ export function AddOrderModal({
   return (
     <Show when={showAddModal()}>
       <div
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-        aria-hidden="true"
-      ></div>
-      <div
         class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
         id="add-user-modal"
       >
