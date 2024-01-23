@@ -45,9 +45,9 @@ export function OrdersTable() {
       const clientsData = await clientsResponse.json();
 
       // Map orders to include client names
-      const ordersWithClientNames = ordersData.map((order) => {
+      const ordersWithClientNames = ordersData.map((order: any) => {
         const client = clientsData.find(
-          (client) => client.id === order.client_id,
+          (client: any) => client.id === order.client_id,
         );
         return {
           ...order,
@@ -191,7 +191,6 @@ export function OrdersTable() {
                 </For>
               </tbody>
             </table>
-            {/* Pagination Controls */}
             {/* Pagination */}
             <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
               <div class="flex flex-1 justify-between sm:hidden">

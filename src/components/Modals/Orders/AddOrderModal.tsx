@@ -38,6 +38,8 @@ export function AddOrderModal({
 
   const [clients, setClients] = createSignal([]);
   const [searchTerm, setSearchTerm] = createSignal("");
+  const [showDropdown, setShowDropdown] = createSignal(null);
+  const [selectedClientName, setSelectedClientName] = createSignal("");
   // Fetch clients from Supabase
   async function fetchClients() {
     try {
@@ -72,6 +74,7 @@ export function AddOrderModal({
 
   return (
     <Show when={showAddModal()}>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
       <div
         class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
         id="add-user-modal"
@@ -141,6 +144,7 @@ export function AddOrderModal({
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
+
                   <div class="col-span-6">
                     <label
                       for="client"
@@ -151,14 +155,49 @@ export function AddOrderModal({
                     <input
                       type="text"
                       placeholder="Search client"
-                      onInput={(e) => setSearchTerm(e.target.value)}
-                      class="mb-2 shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      value={selectedClientName()} // Bind the input value to the selected client's name
+                      onInput={(e) => {
+                        setSearchTerm(e.target.value);
+                        setSelectedClientName(e.target.value); // Update the input value as the user types
+                        setShowDropdown(true);
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => {
+                        // Timeout to allow the dropdown to be clicked before hiding
+                        setTimeout(() => setShowDropdown(false), 200);
+                      }}
+                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
+
+                    <Show when={showDropdown()}>
+                      <ul class="absolute z-10 w-full max-h-56 overflow-auto shadow-sm bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-b-lg">
+                        <For each={filteredClients()}>
+                          {(client, index) => (
+                            <li
+                              class={`cursor-pointer p-2.5 ${
+                                index() % 2 === 0 ? "bg-gray-50" : "bg-white"
+                              } hover:bg-gray-100`}
+                              onMouseDown={(e) => e.preventDefault()} // Prevents the input from losing focus
+                              onClick={() => {
+                                setSelectedClientId(client.id); // Assuming you have this function to set the client ID
+                                setSelectedClientName(
+                                  `${client.first_name} ${client.last_name}`,
+                                ); // Set the selected client's name
+                                setShowDropdown(false); // Hide the dropdown
+                              }}
+                            >
+                              {client.first_name} {client.last_name}
+                            </li>
+                          )}
+                        </For>
+                      </ul>
+                    </Show>
+                    {/* Hidden select to submit the form with the client id */}
                     <select
                       name="client"
                       id="client"
+                      class="hidden"
                       onChange={(e) => setSelectedClientId(e.target.value)}
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     >
                       <For each={filteredClients()}>
                         {(client) => (
@@ -169,6 +208,7 @@ export function AddOrderModal({
                       </For>
                     </select>
                   </div>
+
                   <div class="col-span-6 sm:col-span-3">
                     <label
                       for="invoice"

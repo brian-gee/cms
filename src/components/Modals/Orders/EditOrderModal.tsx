@@ -43,6 +43,8 @@ export function EditOrderModal({
 
   const [clients, setClients] = createSignal([]);
   const [searchTerm, setSearchTerm] = createSignal("");
+  const [showDropdown, setShowDropdown] = createSignal(null);
+  const [selectedClientName, setSelectedClientName] = createSignal("");
   // Fetch clients from Supabase
   async function fetchClients() {
     try {
@@ -77,17 +79,12 @@ export function EditOrderModal({
 
   return (
     <Show when={editSelectedOrder()}>
-      <div
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-        aria-hidden="true"
-      ></div>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
-        id="add-user-modal"
-      >
-        <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+      <div class="fixed inset-0 z-50 flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+        <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:max-w-lg">
           {/* <!-- Modal content --> */}
-          <div class="relative bg-white rounded-lg shadow">
+          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
             {/* <!-- Modal header --> */}
             <div class="flex items-start justify-between p-5 border-b rounded-t">
               <h3 class="text-xl font-semibold">Edit order</h3>
@@ -162,15 +159,49 @@ export function EditOrderModal({
                     <input
                       type="text"
                       placeholder="Search client"
-                      onInput={(e) => setSearchTerm(e.target.value)}
-                      class="mb-2 shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
+                      value={selectedClientName()} // Bind the input value to the selected client's name
+                      onInput={(e) => {
+                        setSearchTerm(e.target.value);
+                        setSelectedClientName(e.target.value); // Update the input value as the user types
+                        setShowDropdown(true);
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => {
+                        // Timeout to allow the dropdown to be clicked before hiding
+                        setTimeout(() => setShowDropdown(false), 200);
+                      }}
+                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
+
+                    <Show when={showDropdown()}>
+                      <ul class="absolute z-10 w-full max-h-56 overflow-auto shadow-sm bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-b-lg">
+                        <For each={filteredClients()}>
+                          {(client, index) => (
+                            <li
+                              class={`cursor-pointer p-2.5 ${
+                                index() % 2 === 0 ? "bg-gray-50" : "bg-white"
+                              } hover:bg-gray-100`}
+                              onMouseDown={(e) => e.preventDefault()} // Prevents the input from losing focus
+                              onClick={() => {
+                                setSelectedClientId(client.id); // Assuming you have this function to set the client ID
+                                setSelectedClientName(
+                                  `${client.first_name} ${client.last_name}`,
+                                ); // Set the selected client's name
+                                setShowDropdown(false); // Hide the dropdown
+                              }}
+                            >
+                              {client.first_name} {client.last_name}
+                            </li>
+                          )}
+                        </For>
+                      </ul>
+                    </Show>
+                    {/* Hidden select to submit the form with the client id */}
                     <select
                       name="client"
                       id="client"
+                      class="hidden"
                       onChange={(e) => setSelectedClientId(e.target.value)}
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
-                      value={editSelectedOrder().client_id}
                     >
                       <For each={filteredClients()}>
                         {(client) => (
@@ -197,7 +228,7 @@ export function EditOrderModal({
                   </div>
                 </div>
                 {/* <!-- Modal footer --> */}
-                <div class="items-center p-6 border-t border-gray-200 rounded-b ">
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                   <button
                     class="text-white bg-black hover:bg-black-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                     type="submit"
