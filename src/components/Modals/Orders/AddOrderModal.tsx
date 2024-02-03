@@ -1,10 +1,7 @@
 import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
-export function AddOrderModal({
-  showAddModal,
-  toggleAddModal,
-  setSelectedClientId,
-}) {
+export function AddOrderModal({ showAddModal, toggleAddModal, accessToken }) {
   // Handler to add a new order
   const addOrderHandler: JSX.EventHandler<
     HTMLFormElement,
@@ -13,17 +10,22 @@ export function AddOrderModal({
     e.preventDefault();
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
+    formData.set("client_id", selectedClientId());
     const amount = formData.get("amount");
     const status = formData.get("status")?.toString();
-    const client_id = formData.get("client");
+    const client_id = formData.get("client_id");
+    const orderImages = formData.getAll("orderImages");
+    console.log(client_id);
 
     if (!amount || !status || !client_id) return;
 
     try {
-      const response = await fetch("/api/orders", {
+      const response = await fetch(`${baseUrl}/orders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, status, client_id }),
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+        body: formData,
       });
       if (!response.ok) {
         throw new Error("Failed to add order");
@@ -40,10 +42,15 @@ export function AddOrderModal({
   const [searchTerm, setSearchTerm] = createSignal("");
   const [showDropdown, setShowDropdown] = createSignal(null);
   const [selectedClientName, setSelectedClientName] = createSignal("");
+  const [selectedClientId, setSelectedClientId] = createSignal("");
   // Fetch clients from Supabase
   async function fetchClients() {
     try {
-      const response = await fetch("/api/clients");
+      const response = await fetch(`${baseUrl}/clients`, {
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch clients");
       }
@@ -154,6 +161,7 @@ export function AddOrderModal({
                     </label>
                     <input
                       type="text"
+                      id="client"
                       placeholder="Search client"
                       value={selectedClientName()} // Bind the input value to the selected client's name
                       onInput={(e) => {
@@ -177,13 +185,13 @@ export function AddOrderModal({
                               class={`cursor-pointer p-2.5 ${
                                 index() % 2 === 0 ? "bg-gray-50" : "bg-white"
                               } hover:bg-gray-100`}
-                              onMouseDown={(e) => e.preventDefault()} // Prevents the input from losing focus
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
-                                setSelectedClientId(client.id); // Assuming you have this function to set the client ID
+                                setSelectedClientId(client.id);
                                 setSelectedClientName(
                                   `${client.first_name} ${client.last_name}`,
-                                ); // Set the selected client's name
-                                setShowDropdown(false); // Hide the dropdown
+                                );
+                                setShowDropdown(false);
                               }}
                             >
                               {client.first_name} {client.last_name}
@@ -194,8 +202,8 @@ export function AddOrderModal({
                     </Show>
                     {/* Hidden select to submit the form with the client id */}
                     <select
-                      name="client"
-                      id="client"
+                      name="client_id"
+                      id="client_id"
                       class="hidden"
                       onChange={(e) => setSelectedClientId(e.target.value)}
                     >
@@ -211,15 +219,16 @@ export function AddOrderModal({
 
                   <div class="col-span-6 sm:col-span-3">
                     <label
-                      for="invoice"
+                      for="orderImages"
                       class="block mb-2 text-sm font-medium text-gray-900"
                     >
-                      Invoice
+                      Images
                     </label>
                     <input
                       type="file"
-                      name="invoice"
-                      id="invoice"
+                      multiple
+                      name="orderImages"
+                      id="orderImages"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
                   </div>

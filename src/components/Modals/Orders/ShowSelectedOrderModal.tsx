@@ -1,4 +1,5 @@
-import { Show } from "solid-js";
+import { Show, For } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export function ShowSelectedOrderModal({
   selectedOrder,
@@ -69,10 +70,18 @@ export function ShowSelectedOrderModal({
                 <p>{selectedOrder().status}</p>
               </div>
               <div>
-                <h4 class="text-lg font-medium">Invoice</h4>
-                <p></p>
+                <h4 class="text-lg font-medium">Images</h4>
+                <For each={selectedOrder().picture_urls}>
+                  {(picture_url, index) => {
+                    return (
+                      <img
+                        src={`${baseUrl}/orderImages/${picture_url}`} // Removed the extra '../' and the slash before 'images'
+                        alt={`Order Image ${index()}`}
+                      />
+                    );
+                  }}
+                </For>
               </div>
-              {/* Add more fields as needed */}
             </div>
           </div>
         </div>

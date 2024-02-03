@@ -1,15 +1,15 @@
 import { createSignal, createEffect, For, ErrorBoundary } from "solid-js";
-
 import { AddOrderModal } from "./Modals/Orders/AddOrderModal";
 import { DeleteOrderModal } from "./Modals/Orders/DeleteOrderModal";
 import { ShowSelectedOrderModal } from "./Modals/Orders/ShowSelectedOrderModal";
 import { EditOrderModal } from "./Modals/Orders/EditOrderModal";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export interface OrderEntry {
   [key: string]: any;
 }
 
-export function OrdersTable() {
+export function OrdersTable(accessToken) {
   const [orders, setOrders] = createSignal<OrderEntry[]>([]);
   // State for storing clients
   const [selectedClientId, setSelectedClientId] = createSignal(null);
@@ -32,13 +32,21 @@ export function OrdersTable() {
   // Fetch orders data from the server
   async function fetchOrders() {
     try {
-      const ordersResponse = await fetch("/api/orders");
+      const ordersResponse = await fetch(`${baseUrl}/orders`, {
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+      });
       if (!ordersResponse.ok) {
         throw new Error("Failed to fetch orders");
       }
       const ordersData = await ordersResponse.json();
 
-      const clientsResponse = await fetch("/api/clients");
+      const clientsResponse = await fetch(`${baseUrl}/clients`, {
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+      });
       if (!clientsResponse.ok) {
         throw new Error("Failed to fetch clients");
       }
@@ -80,7 +88,12 @@ export function OrdersTable() {
     const filteredData = orders()?.filter((order) => {
       const amount = order.amount.toString().toLowerCase();
       const status = order.status.toLowerCase();
-      return amount.includes(query) || status.includes(query);
+      const clientName = order.clientName.toLowerCase();
+      return (
+        amount.includes(query) ||
+        status.includes(query) ||
+        clientName.includes(query)
+      );
     });
 
     // Calculate start and end indices for pagination
@@ -294,7 +307,7 @@ export function OrdersTable() {
         <AddOrderModal
           showAddModal={showAddModal}
           toggleAddModal={toggleAddModal}
-          setSelectedClientId={setSelectedClientId}
+          accessToken={accessToken}
         />
 
         <DeleteOrderModal
@@ -303,6 +316,7 @@ export function OrdersTable() {
           toggleDeleteModal={toggleDeleteModal}
           toggleDeleteModalNoOrder={toggleDeleteModalNoOrder}
           currentOrderId={currentOrderId}
+          accessToken={accessToken}
         />
 
         <ShowSelectedOrderModal
@@ -314,7 +328,7 @@ export function OrdersTable() {
         <EditOrderModal
           editSelectedOrder={editSelectedOrder}
           setEditSelectedOrder={setEditSelectedOrder}
-          setSelectedClientId={setSelectedClientId}
+          accessToken={accessToken}
         />
       </ErrorBoundary>
     </div>

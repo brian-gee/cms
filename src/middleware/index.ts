@@ -31,6 +31,7 @@ export const onRequest = defineMiddleware(
       }
 
       locals.email = data.user?.email!;
+      locals.accessToken = accessToken.value;
       cookies.set("sb-access-token", data?.session?.access_token!, {
         sameSite: "strict",
         path: "/",

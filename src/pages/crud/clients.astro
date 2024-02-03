@@ -1,8 +1,9 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { ClientsTable } from "../../components/ClientsTable";
+const accessToken = Astro.locals.accessToken;
 ---
 
 <Layout title="Clients">
-  <ClientsTable client:idle />
+  <ClientsTable client:only accessToken={accessToken} />
 </Layout>

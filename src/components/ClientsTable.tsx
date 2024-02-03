@@ -10,12 +10,13 @@ import { AddClientModal } from "./Modals/Clients/AddClientModal";
 import { DeleteClientModal } from "./Modals/Clients/DeleteClientModal";
 import { ShowSelectedClientModal } from "./Modals/Clients/ShowSelectedClientModal";
 import { EditClientModal } from "./Modals/Clients/EditClientModal";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export interface ClientEntry {
   [key: string]: any;
 }
 
-export function ClientsTable() {
+export function ClientsTable(accessToken) {
   const tableHeaders = ["Name", "Phone", "Email", "Actions"];
 
   // Signal for storing client data
@@ -26,6 +27,9 @@ export function ClientsTable() {
   const [selectedClient, setSelectedClient] = createSignal(null);
   const [editSelectedClient, setEditSelectedClient] = createSignal(null);
   const [currentClientId, setCurrentClientId] = createSignal(null);
+  const [currentClientFirstName, setCurrentClientFirstName] =
+    createSignal(null);
+  const [currentClientLastName, setCurrentClientLastName] = createSignal(null);
   // State for the search query
   const [searchQuery, setSearchQuery] = createSignal("");
   // State for pagination
@@ -38,7 +42,11 @@ export function ClientsTable() {
   // Fetch clients data from the server
   async function fetchClients() {
     try {
-      const response = await fetch("/api/clients");
+      const response = await fetch(`${baseUrl}/clients`, {
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch clients");
       }
@@ -92,9 +100,15 @@ export function ClientsTable() {
   // Toggle functions for modals
   const toggleAddModal = () => setShowAddModal(!showAddModal());
   const toggleDeleteModalNoId = () => setShowDeleteModal(!showDeleteModal());
-  const toggleDeleteModal = (clientId: any) => {
+  const toggleDeleteModal = (
+    clientId: any,
+    clientFirstName,
+    clientLastName,
+  ) => {
     setShowDeleteModal(!showDeleteModal());
     setCurrentClientId(clientId);
+    setCurrentClientFirstName(clientFirstName);
+    setCurrentClientLastName(clientLastName);
   };
 
   const handleClientClick = (client: any) => {
@@ -178,7 +192,13 @@ export function ClientsTable() {
                           Edit
                         </button>
                         <button
-                          onclick={() => toggleDeleteModal(client.id)}
+                          onclick={() =>
+                            toggleDeleteModal(
+                              client.id,
+                              client.first_name,
+                              client.last_name,
+                            )
+                          }
                           class="text-primary hover:text-primary_hover ml-4"
                         >
                           Delete
@@ -296,6 +316,7 @@ export function ClientsTable() {
           fetchClients={fetchClients}
           showAddModal={showAddModal}
           toggleAddModal={toggleAddModal}
+          accessToken={accessToken}
         />
 
         <DeleteClientModal
@@ -304,6 +325,9 @@ export function ClientsTable() {
           toggleDeleteModal={toggleDeleteModal}
           toggleDeleteModalNoId={toggleDeleteModalNoId}
           currentClientId={currentClientId}
+          currentClientFirstName={currentClientFirstName}
+          currentClientLastName={currentClientLastName}
+          accessToken={accessToken}
         />
 
         <ShowSelectedClientModal
@@ -316,6 +340,7 @@ export function ClientsTable() {
         <EditClientModal
           editSelectedClient={editSelectedClient}
           setEditSelectedClient={setEditSelectedClient}
+          accessToken={accessToken}
         />
       </ErrorBoundary>
     </div>

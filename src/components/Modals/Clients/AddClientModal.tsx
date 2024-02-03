@@ -1,6 +1,12 @@
 import { Show, type JSX } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
-export function AddClientModal({ fetchClients, showAddModal, toggleAddModal }) {
+export function AddClientModal({
+  fetchClients,
+  showAddModal,
+  toggleAddModal,
+  accessToken,
+}) {
   const addClientHandler: JSX.EventHandler<
     HTMLFormElement,
     SubmitEvent
@@ -24,16 +30,19 @@ export function AddClientModal({ fetchClients, showAddModal, toggleAddModal }) {
       !email ||
       !address ||
       !city ||
-      !zip ||
-      !company
+      !zip
     ) {
       return;
     }
 
     try {
-      const response = await fetch("/api/clients", {
+      const response = await fetch(`${baseUrl}/clients`, {
+        // Updated URL
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
         body: JSON.stringify({
           first_name,
           last_name,
@@ -48,9 +57,12 @@ export function AddClientModal({ fetchClients, showAddModal, toggleAddModal }) {
       if (!response.ok) {
         throw new Error("Failed to add client");
       }
+
+      // Handle successful response if needed
     } catch (error) {
       console.error("Error adding client:", error);
     }
+
     formElement.reset();
     window.location.href = "/crud/clientSuccess";
   };
@@ -218,7 +230,6 @@ export function AddClientModal({ fetchClients, showAddModal, toggleAddModal }) {
                       id="company"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="Company"
-                      required
                     />
                   </div>
                 </div>

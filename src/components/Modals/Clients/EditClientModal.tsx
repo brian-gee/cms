@@ -1,6 +1,11 @@
 import { Show, type JSX } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
-export function EditClientModal({ editSelectedClient, setEditSelectedClient }) {
+export function EditClientModal({
+  editSelectedClient,
+  setEditSelectedClient,
+  accessToken,
+}) {
   const editClientHandler: JSX.EventHandler<
     HTMLFormElement,
     SubmitEvent
@@ -24,30 +29,34 @@ export function EditClientModal({ editSelectedClient, setEditSelectedClient }) {
       !email ||
       !address ||
       !city ||
-      !zip ||
-      !company
+      !zip
     ) {
       return;
     }
 
     try {
-      const response = await fetch("/api/clients", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editSelectedClient().id,
-          first_name,
-          last_name,
-          phone,
-          email,
-          address,
-          city,
-          zip,
-          company,
-        }),
-      });
+      const response = await fetch(
+        `${baseUrl}/clients/${editSelectedClient().id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${accessToken.accessToken}`,
+          },
+          body: JSON.stringify({
+            first_name,
+            last_name,
+            phone,
+            email,
+            address,
+            city,
+            zip,
+            company,
+          }),
+        },
+      );
       if (!response.ok) {
-        throw new Error("Failed to add client");
+        throw new Error("Failed to add client:");
       }
     } catch (error) {
       console.error("Error adding client:", error);
@@ -226,7 +235,6 @@ export function EditClientModal({ editSelectedClient, setEditSelectedClient }) {
                       id="company"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5      "
                       placeholder="Company"
-                      required
                       value={editSelectedClient().company}
                     />
                   </div>

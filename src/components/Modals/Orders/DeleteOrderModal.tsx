@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export function DeleteOrderModal({
   fetchOrders,
@@ -6,13 +7,16 @@ export function DeleteOrderModal({
   toggleDeleteModal,
   toggleDeleteModalNoOrder,
   currentOrderId,
+  accessToken,
 }) {
   async function deleteOrder(orderId: string) {
     try {
-      const response = await fetch("/api/orders", {
+      const response = await fetch(`${baseUrl}/orders/${orderId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: orderId }), // Modify this line
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
       });
       if (!response.ok) {
         throw new Error("Failed to delete order");

@@ -1,9 +1,10 @@
 import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export function EditOrderModal({
   editSelectedOrder,
   setEditSelectedOrder,
-  setSelectedClientId,
+  accessToken,
 }) {
   // Handler to add a new order
   const editOrderHandler: JSX.EventHandler<
@@ -13,23 +14,30 @@ export function EditOrderModal({
     e.preventDefault();
     const formElement = e.currentTarget;
     const formData = new FormData(formElement);
+    formData.set("client_id", selectedClientId());
     const amount = formData.get("amount");
     const status = formData.get("status")?.toString();
-    const client_id = formData.get("client");
+    const client_id = formData.get("client_id");
 
     if (!amount || !status || !client_id) return;
 
     try {
-      const response = await fetch("/api/orders", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editSelectedOrder().id,
-          amount,
-          status,
-          client_id,
-        }),
-      });
+      const response = await fetch(
+        `${baseUrl}/orders/${editSelectedOrder().id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${accessToken.accessToken}`,
+          },
+          body: JSON.stringify({
+            id: editSelectedOrder().id,
+            amount,
+            status,
+            client_id,
+          }),
+        },
+      );
       if (!response.ok) {
         throw new Error("Failed to edit order");
       }
@@ -45,10 +53,15 @@ export function EditOrderModal({
   const [searchTerm, setSearchTerm] = createSignal("");
   const [showDropdown, setShowDropdown] = createSignal(null);
   const [selectedClientName, setSelectedClientName] = createSignal("");
+  const [selectedClientId, setSelectedClientId] = createSignal("");
   // Fetch clients from Supabase
   async function fetchClients() {
     try {
-      const response = await fetch("/api/clients");
+      const response = await fetch(`${baseUrl}/clients`, {
+        headers: {
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch clients");
       }
@@ -80,11 +93,13 @@ export function EditOrderModal({
   return (
     <Show when={editSelectedOrder()}>
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-
-      <div class="fixed inset-0 z-50 flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
-        <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:max-w-lg">
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto"
+        id="add-user-modal"
+      >
+        <div class="relative w-full h-full max-w-2xl px-4 md:h-auto">
           {/* <!-- Modal content --> */}
-          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="relative bg-white rounded-lg shadow">
             {/* <!-- Modal header --> */}
             <div class="flex items-start justify-between p-5 border-b rounded-t">
               <h3 class="text-xl font-semibold">Edit order</h3>
@@ -123,10 +138,10 @@ export function EditOrderModal({
                       step="any"
                       name="amount"
                       id="amount"
+                      value={editSelectedOrder().amount}
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 "
                       placeholder="299.00"
                       required
-                      value={editSelectedOrder().amount}
                     />
                   </div>
                   <div class="col-span-6 sm:col-span-3">
@@ -139,8 +154,8 @@ export function EditOrderModal({
                     <select
                       name="status"
                       id="status"
-                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                       value={editSelectedOrder().status}
+                      class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     >
                       <option value="not_sent">Not Sent</option>
                       <option value="pending">Pending</option>
@@ -149,6 +164,7 @@ export function EditOrderModal({
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
+
                   <div class="col-span-6">
                     <label
                       for="client"
@@ -158,6 +174,7 @@ export function EditOrderModal({
                     </label>
                     <input
                       type="text"
+                      id="client"
                       placeholder="Search client"
                       value={selectedClientName()} // Bind the input value to the selected client's name
                       onInput={(e) => {
@@ -181,13 +198,13 @@ export function EditOrderModal({
                               class={`cursor-pointer p-2.5 ${
                                 index() % 2 === 0 ? "bg-gray-50" : "bg-white"
                               } hover:bg-gray-100`}
-                              onMouseDown={(e) => e.preventDefault()} // Prevents the input from losing focus
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
-                                setSelectedClientId(client.id); // Assuming you have this function to set the client ID
+                                setSelectedClientId(client.id);
                                 setSelectedClientName(
                                   `${client.first_name} ${client.last_name}`,
-                                ); // Set the selected client's name
-                                setShowDropdown(false); // Hide the dropdown
+                                );
+                                setShowDropdown(false);
                               }}
                             >
                               {client.first_name} {client.last_name}
@@ -198,9 +215,10 @@ export function EditOrderModal({
                     </Show>
                     {/* Hidden select to submit the form with the client id */}
                     <select
-                      name="client"
-                      id="client"
+                      name="client_id"
+                      id="client_id"
                       class="hidden"
+                      value={editSelectedOrder().client_id}
                       onChange={(e) => setSelectedClientId(e.target.value)}
                     >
                       <For each={filteredClients()}>
@@ -212,28 +230,30 @@ export function EditOrderModal({
                       </For>
                     </select>
                   </div>
+
                   <div class="col-span-6 sm:col-span-3">
                     <label
-                      for="invoice"
+                      for="orderImages"
                       class="block mb-2 text-sm font-medium text-gray-900"
                     >
-                      Invoice
+                      Images
                     </label>
                     <input
                       type="file"
-                      name="invoice"
-                      id="invoice"
+                      multiple
+                      name="orderImages"
+                      id="orderImages"
                       class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5"
                     />
                   </div>
                 </div>
                 {/* <!-- Modal footer --> */}
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <div class="items-center p-6 border-t border-gray-200 rounded-b ">
                   <button
                     class="text-white bg-black hover:bg-black-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                     type="submit"
                   >
-                    Save order
+                    Edit order
                   </button>
                 </div>
               </form>

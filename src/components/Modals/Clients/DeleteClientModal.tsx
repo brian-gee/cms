@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export function DeleteClientModal({
   fetchClients,
@@ -6,22 +7,30 @@ export function DeleteClientModal({
   toggleDeleteModal,
   toggleDeleteModalNoId,
   currentClientId,
+  currentClientFirstName,
+  currentClientLastName,
+  accessToken,
 }) {
   async function deleteClient(clientId: string) {
     try {
-      const response = await fetch("/api/clients", {
+      const response = await fetch(`${baseUrl}/clients/${clientId}`, {
+        // Include the ID in the URL
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: clientId }), // Modify this line
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${accessToken.accessToken}`,
+        },
+
+        // Removed the body
       });
       if (!response.ok) {
-        throw new Error("Failed to delete order");
+        throw new Error("Failed to delete client"); // Changed 'order' to 'client' for clarity
       }
-      // Fetch the updated list of orders
+      // Fetch the updated list of clients
       await fetchClients();
       toggleDeleteModalNoId();
     } catch (error) {
-      console.error("Error deleting order:", error);
+      console.error("Error deleting client:", error); // Changed 'order' to 'client' for clarity
     }
   }
 
@@ -64,8 +73,9 @@ export function DeleteClientModal({
                   </h3>
                   <div class="mt-2">
                     <p class="text-sm text-gray-500">
-                      Are you sure you want to delete order with ID:{" "}
-                      {currentClientId()}?
+                      Are you sure you want to delete:{" "}
+                      {currentClientFirstName() + " " + currentClientLastName()}
+                      ?
                     </p>
                   </div>
                 </div>
