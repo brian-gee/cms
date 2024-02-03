@@ -1,5 +1,5 @@
 import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
-const baseUrl = import.meta.env.PUBLIC_BASE_URL;
+const baseUrl = import.meta.env.BASE_URL;
 
 export function AddOrderModal({ showAddModal, toggleAddModal, accessToken }) {
   // Handler to add a new order
@@ -15,7 +15,6 @@ export function AddOrderModal({ showAddModal, toggleAddModal, accessToken }) {
     const status = formData.get("status")?.toString();
     const client_id = formData.get("client_id");
     const orderImages = formData.getAll("orderImages");
-    console.log(client_id);
 
     if (!amount || !status || !client_id) return;
 

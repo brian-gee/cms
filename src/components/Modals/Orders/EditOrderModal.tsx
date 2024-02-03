@@ -1,5 +1,5 @@
 import { Show, For, createSignal, createEffect, type JSX } from "solid-js";
-const baseUrl = import.meta.env.PUBLIC_BASE_URL;
+const baseUrl = import.meta.env.BASE_URL;
 
 export function EditOrderModal({
   editSelectedOrder,
@@ -18,6 +18,7 @@ export function EditOrderModal({
     const amount = formData.get("amount");
     const status = formData.get("status")?.toString();
     const client_id = formData.get("client_id");
+    const orderImages = formData.getAll("orderImages");
 
     if (!amount || !status || !client_id) return;
 
@@ -27,15 +28,9 @@ export function EditOrderModal({
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             authorization: `Bearer ${accessToken.accessToken}`,
           },
-          body: JSON.stringify({
-            id: editSelectedOrder().id,
-            amount,
-            status,
-            client_id,
-          }),
+          body: formData,
         },
       );
       if (!response.ok) {

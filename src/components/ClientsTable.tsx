@@ -10,7 +10,7 @@ import { AddClientModal } from "./Modals/Clients/AddClientModal";
 import { DeleteClientModal } from "./Modals/Clients/DeleteClientModal";
 import { ShowSelectedClientModal } from "./Modals/Clients/ShowSelectedClientModal";
 import { EditClientModal } from "./Modals/Clients/EditClientModal";
-const baseUrl = import.meta.env.PUBLIC_BASE_URL;
+const baseUrl = import.meta.env.BASE_URL;
 
 export interface ClientEntry {
   [key: string]: any;
