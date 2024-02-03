@@ -3,7 +3,7 @@ import { AddOrderModal } from "./Modals/Orders/AddOrderModal";
 import { DeleteOrderModal } from "./Modals/Orders/DeleteOrderModal";
 import { ShowSelectedOrderModal } from "./Modals/Orders/ShowSelectedOrderModal";
 import { EditOrderModal } from "./Modals/Orders/EditOrderModal";
-const baseUrl = import.meta.env.BASE_URL;
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export interface OrderEntry {
   [key: string]: any;

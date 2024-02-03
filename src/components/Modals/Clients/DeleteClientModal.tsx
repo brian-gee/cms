@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-const baseUrl = import.meta.env.BASE_URL;
+const baseUrl = import.meta.env.PUBLIC_BASE_URL;
 
 export function DeleteClientModal({
   fetchClients,
